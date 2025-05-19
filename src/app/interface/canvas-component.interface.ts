@@ -1,50 +1,42 @@
 export interface CanvasComponent {
   id: string;
-  type?: string; // 'div' | 'label' | 'input' | etc.
-  style: {
-    top?: string;
-    left?: string;
-    width?: string;
-    height?: string;
-    backgroundColor?: string;
-    color?: string;
-    border?: string;
-    borderRadius?: string;
-    position?: string;
-    fontSize?: string;
-    fontFamily?: string;
-    fontWeight?: string;
-    cursor?: string;
-    textAlign?: string;
-    lineHeight?: string;
-    boxShadow?: string;
-    transition?: string;
-    display?: string;
-    // Propiedades faltantes
-    padding?: string;
-    margin?: string;
-    marginBottom?: string;
-    marginRight?: string;
-    marginTop?: string;
-    marginLeft?: string;
-    paddingLeft?: string;
-    paddingRight?: string;
-    paddingTop?: string;
-    paddingBottom?: string;
-    borderBottom?: string;
-    borderTop?: string;
-    borderLeft?: string;
-    borderRight?: string;
-    justifyContent?: string;
-    alignItems?: string;
-    flexDirection?: string;
-    transform?: string;
-    bottom?: string;
-    right?: string;
-    textDecoration?: string;
-    zIndex?: string;
+  type: string; // Ej: 'Container', 'Text', 'Column', etc.
+
+  // Posición solo para widgets posicionados manualmente (como Positioned)
+  top?: number;
+  left?: number;
+  right?: number;
+  bottom?: number;
+
+  // Dimensiones
+  width?: number;
+  height?: number;
+
+  // Decoración visual
+  decoration?: {
+    color?: string; // Background color
+    border?: {
+      color: string;
+      width: number;
+    };
+    borderRadius?: number;
   };
-  children?: CanvasComponent[];
+
+  // Texto para widgets tipo Text, DropdownButton, etc.
+  text?: string;
+
+  // Alineaciones y layout
+  alignment?: string; // Ej: 'Alignment.center'
+  mainAxisAlignment?: string; // Para Column o Row
+  crossAxisAlignment?: string;
+  textAlign?: string; // Para Text
+
+  // Contenido lógico
+  value?: string | boolean;
+  rows?: number;
+  icon?: string;
+
+  // Relaciones
   parentId?: string | null;
-  content?: string; // contenido textual para tags como label
+  children?: CanvasComponent[];
 }

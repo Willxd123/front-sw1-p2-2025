@@ -1,4 +1,3 @@
-// sidebar-izq.component.ts
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,13 +18,10 @@ interface Page {
   templateUrl: './sidebar-izq.component.html'
 })
 export class SidebarIzqComponent implements OnInit {
-  roomName: string = '';
-  errorMessage: string = '';
-  usersInRoom: any[] = [];
-
+  // propiedades y entradas originales
   @Input() pages: Page[] = [];
   @Input() selectedPageId: string | null = null;
-  @Input() components: CanvasComponent[] = [];  // MANTIENE COMPONENTES EN EL CANVAS ACTUAL
+  @Input() components: CanvasComponent[] = [];
   @Input() roomCode: string = '';
   @Input() contextMenu: any;
   @Input() isModalOpen: boolean = false;
@@ -41,7 +37,9 @@ export class SidebarIzqComponent implements OnInit {
     private router: Router
   ) { }
 
+  roomName: string = '';
   showParticipants: boolean = false;
+  usersInRoom: any[] = [];
 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
@@ -52,304 +50,122 @@ export class SidebarIzqComponent implements OnInit {
       this.usersInRoom = users;
     });
   }
-  dropdownOpen: boolean = false;
-
-  onSelectPage(pageId: string) {
-    this.selectPage.emit(pageId);
-  }
-
-  onAddPage() {
-    this.addPage.emit();
-  }
 
   get currentComponents(): CanvasComponent[] {
     return this.components;
   }
 
-  addComponent() {
+  addContainerFlutter() {
     const newComponent: CanvasComponent = {
       id: uuidv4(),
-      type: 'div',
-      style: {
-        top: '50px',
-        left: '50px',
-        width: '200px',
-        height: '100px',
-        backgroundColor: '#f0f0f0',
-        color: '#000000',
-        border: '1px solid #cccccc',
-        borderRadius: '4px',
-        position: 'absolute',
-        fontSize: '16px',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        lineHeight: '40px',
+      type: 'Container',
+      top: 50,
+      left: 50,
+      width: 120,
+      height: 80,
+      decoration: {
+        color: '#ffeecc',
+        border: { color: '#000000', width: 1 },
+        borderRadius: 8
       },
-      content: 'Nuevo Div',
       children: [],
-      parentId: null,
+      parentId: null
     };
     this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, newComponent);
-
     this.contextMenu.visible = false;
   }
 
-  addLabelComponent() {
-    const labelComponent: CanvasComponent = {
+  addTextFlutter() {
+    const newComponent: CanvasComponent = {
       id: uuidv4(),
-      type: 'label',
-      style: {
-        top: '60px',
-        left: '60px',
-        width: '100px',
-        height: '20px',
-        backgroundColor: 'transparent',
-        color: '#000000',
-        position: 'absolute',
-        fontSize: '16px',
-        fontFamily: 'Arial, sans-serif',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        lineHeight: '40px',
+      type: 'Text',
+      top: 120,
+      left: 100,
+      text: 'Texto ejemplo',
+      textAlign: 'center',
+      parentId: null
+    };
+    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, newComponent);
+    this.contextMenu.visible = false;
+  }
+
+  addColumnFlutter() {
+    const newComponent: CanvasComponent = {
+      id: uuidv4(),
+      type: 'Column',
+      top: 200,
+      left: 100,
+      width: 160,
+      height: 200,
+      decoration: {
+        color: '#e0f7fa',
+        border: { color: '#00796b', width: 2 },
+        borderRadius: 10
       },
-      content: 'Etiqueta:',
+      mainAxisAlignment: 'center',
       children: [],
-      parentId: null,
+      parentId: null
     };
-    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, labelComponent);
-
-
+    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, newComponent);
     this.contextMenu.visible = false;
   }
 
-  addButtonComponent() {
-    const buttonComponent: CanvasComponent = {
-      id: uuidv4(),
-      type: 'button',
-      style: {
-        top: '50px',
-        left: '50px',
-        width: '120px',
-        height: '40px',
-        backgroundColor: '#4f46e5',
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '6px',
-        position: 'absolute',
-        fontSize: '14px',
-        fontFamily: 'Arial, sans-serif',
-        cursor: 'pointer',
-        textAlign: 'center',
-        lineHeight: '40px',
-        fontWeight: 'bold',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        transition: 'all 0.2s ease',
-        display: 'inline-block',
-      },
-      content: 'Click me',
-      children: [],
-      parentId: null,
-    };
-    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, buttonComponent);
+  exportFlutterCode(): string {
+    const renderWidget = (comp: CanvasComponent): string => {
+      const props: string[] = [];
+      const children = comp.children?.map(child => renderWidget(child)).join(',\n') || '';
 
+      if (comp.width) props.push(`width: ${comp.width}`);
+      if (comp.height) props.push(`height: ${comp.height}`);
 
-    this.contextMenu.visible = false;
-  }
-  addSelectComponent() {
-    const selectComponent: CanvasComponent = {
-      id: uuidv4(),
-      type: 'select',
-      style: {
-        top: '80px',
-        left: '80px',
-        width: '160px',
-        height: '40px',
-        backgroundColor: '#ffffff',
-        color: '#000000',
-        border: '1px solid #cccccc',
-        borderRadius: '4px',
-        position: 'absolute',
-        fontSize: '14px',
-        fontFamily: 'Arial, sans-serif',
-      },
-      content: '',  // Vacío, ya que tendrá hijos tipo <option>
-      children: [
-        {
-          id: uuidv4(),
-          type: 'option',
-          style: {},
-          content: 'Opción 1',
-          children: [],
-          parentId: null,
-        },
-        {
-          id: uuidv4(),
-          type: 'option',
-          style: {},
-          content: 'Opción 2',
-          children: [],
-          parentId: null,
-        }
-      ],
-      parentId: null,
-    };
-
-    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, selectComponent);
-    this.contextMenu.visible = false;
-  }
-  addTableComponent() {
-    const tableComponent: CanvasComponent = {
-      id: uuidv4(),
-      type: 'table',
-      style: {
-        top: '100px',
-        left: '100px',
-        width: '400px',
-        height: 'auto',
-        border: '1px solid #000',
-        position: 'absolute',
-        backgroundColor: '#ffffff',
-      },
-      children: [
-        {
-          id: uuidv4(),
-          type: 'tr',
-          children: Array.from({ length: 3 }, (_, i) => ({
-            id: uuidv4(),
-            type: 'td',
-            content: `Col ${i + 1}`,
-            style: { border: '1px solid #ccc' },
-            children: [],
-            parentId: null,
-          })),
-          style: {},
-          parentId: null
-        },
-        {
-          id: uuidv4(),
-          type: 'tr',
-          children: Array.from({ length: 3 }, (_, i) => ({
-            id: uuidv4(),
-            type: 'td',
-            content: `Dato ${i + 1}`,
-            style: { border: '1px solid #ccc' },
-            children: [],
-            parentId: null,
-          })),
-          style: {},
-          parentId: null
-        }
-      ],
-      content: '',
-      parentId: null,
-    };
-  
-    this.SokectSevice.addCanvasComponent(this.roomCode, this.selectedPageId!, tableComponent);
-    this.contextMenu.visible = false;
-  }
-  
-
-  openHtmlModal() {
-    this.isModalOpen = true;
-  }
-
-  exportHtml(): { html: string, css: string } {
-    let counter = 0;
-    const cssMap = new Map<string, string>();
-  
-    const toKebabCase = (str: string): string =>
-      str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-  
-    const renderComponent = (comp: CanvasComponent): string => {
-      const className = `c${++counter}`;
-      const styleString = Object.entries(comp.style || {})
-        .map(([key, val]) => `${toKebabCase(key)}: ${val};`)
-        .join(' ');
-  
-      cssMap.set(className, styleString);
-  
-      const tag = comp.type || 'div';
-      const childrenHtml = (comp.children?.map(renderComponent).join('') || '');
-      const inner = (comp.content || '') + childrenHtml;
-  
-      return `<${tag} class="${className}">${inner}</${tag}>`;
-    };
-  
-    const html = `<body>\n${this.currentComponents.map(renderComponent).join('\n')}\n</body>`;
-    const css = Array.from(cssMap.entries())
-      .map(([cls, styles]) => `.${cls} {\n  ${styles}\n}`)
-      .join('\n\n');
-  
-    return { html, css };
-  }
-  
-  
-  
-
-  loadSampleJson() {
-    // Puedes copiar aquí tu JSON de ejemplo si quieres también...
-  }
-  pageContextMenu = {
-    visible: false,
-    x: 0,
-    y: 0,
-    targetPageId: ''
-  };
-  onPageContextMenu(event: MouseEvent, page: Page) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Solo permitir eliminar si NO es la primera página
-    if (this.pages.indexOf(page) > 0) {
-      this.pageContextMenu.visible = true;
-      this.pageContextMenu.x = event.clientX;
-      this.pageContextMenu.y = event.clientY;
-      this.pageContextMenu.targetPageId = page.id;
-    }
-  }
-  deletePage(pageId: string) {
-    const index = this.pages.findIndex(p => p.id === pageId);
-    if (index > 0) {
-      this.pages.splice(index, 1);
-
-      // Socket para notificar a todos los usuarios
-      this.SokectSevice.removePage(this.roomCode, pageId);
-
-      if (this.selectedPageId === pageId && this.pages.length > 0) {
-        const newSelected = this.pages[Math.max(0, index - 1)];
-        this.onSelectPage(newSelected.id);
+      if (comp.decoration) {
+        const decProps: string[] = [];
+        if (comp.decoration.color)
+          decProps.push(`color: Color(0xFF${comp.decoration.color.replace('#', '')})`);
+        if (comp.decoration.border)
+          decProps.push(`border: Border.all(color: Color(0xFF${comp.decoration.border.color.replace('#', '')}), width: ${comp.decoration.border.width})`);
+        if (comp.decoration.borderRadius !== undefined)
+          decProps.push(`borderRadius: BorderRadius.circular(${comp.decoration.borderRadius})`);
+        props.push(`decoration: BoxDecoration(\n  ${decProps.join(',\n  ')}\n)`);
       }
-    }
 
-    this.pageContextMenu.visible = false;
-  }
+      if (comp.alignment) props.push(`alignment: ${comp.alignment}`);
+      if (comp.textAlign) props.push(`textAlign: TextAlign.${comp.textAlign}`);
+      if (comp.mainAxisAlignment) props.push(`mainAxisAlignment: MainAxisAlignment.${comp.mainAxisAlignment}`);
+      if (comp.crossAxisAlignment) props.push(`crossAxisAlignment: CrossAxisAlignment.${comp.crossAxisAlignment}`);
 
-  exportHtmlOnly(): string {
-    const renderComponent = (comp: CanvasComponent): string => {
-      const childrenHtml = comp.children?.map(renderComponent).join('') || '';
-      const tag = comp.type || 'div';
-      const content = comp.content || '';
-      if (tag === 'label') {
-        return `<label class="${comp.id}">${content}</label>`;
+      switch (comp.type) {
+        case 'Container':
+          return `Container(\n  ${props.join(',\n  ')}${children ? ',\n  child: ${children}' : ''}\n)`;
+        case 'Text':
+          return `Text('${comp.text || ''}'${props.length ? ',\n  ' + props.join(',\n  ') : ''})`;
+        case 'Column':
+          return `Column(\n  ${props.join(',\n  ')},\n  children: [\n    ${comp.children?.map(c => renderWidget(c)).join(',\n    ') || ''}\n  ]\n)`;
+        default:
+          return `Container(child: Text('No soportado: ${comp.type}'))`;
       }
-      return `<${tag} class="${comp.id}">${childrenHtml}</${tag}>`;
     };
-  
-    return this.currentComponents.map(renderComponent).join('\n');
+
+    const widgets = this.currentComponents.map(c => `          ${renderWidget(c)}`).join(',\n');
+
+    return `import 'package:flutter/material.dart';
+
+class GeneratedPage extends StatelessWidget {
+  const GeneratedPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Stack(
+          children: [
+${widgets}
+          ],
+        ),
+      ),
+    );
   }
-  
-  exportCssOnly(): string {
-    const collectStyles = (comp: CanvasComponent): string => {
-      const styleString = Object.entries(comp.style)
-        .map(([key, val]) => `${key}: ${val};`)
-        .join(' ');
-      const css = `.${comp.id} {\n  ${styleString}\n}\n`;
-      const childrenCss = comp.children?.map(collectStyles).join('') || '';
-      return css + childrenCss;
-    };
-  
-    return this.currentComponents.map(collectStyles).join('\n');
+}
+`;
   }
-  
 }

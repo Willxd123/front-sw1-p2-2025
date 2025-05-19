@@ -30,8 +30,8 @@ interface pantalla {
 interface CanvasComponent {
   id: string;
   type: string;
-  top: number;
-  left: number;
+  top?: number;
+  left?: number;
   width: number;
   height: number;
   decoration: {
@@ -43,6 +43,12 @@ interface CanvasComponent {
     borderRadius: number;
   };
   text?: string;
+  alignment?: 'topLeft' | 'topCenter' | 'topRight' |
+            'centerLeft' | 'center' | 'centerRight' |
+            'bottomLeft' | 'bottomCenter' | 'bottomRight';
+
+  options?: string[];
+
   children: CanvasComponent[];
   parentId: string | null;
 }
@@ -87,6 +93,8 @@ export class RoomsComponent implements OnInit {
     initialTop: 0,
   };
 
+ 
+  dropdownSelectionMap: Record<string, string> = {};
 
   currentPantalla = 0;
   isModalFlutterCodeOpen: boolean = false;
@@ -100,7 +108,12 @@ export class RoomsComponent implements OnInit {
 
   ngOnInit(): void {
     this.pantallas = [{ id: uuidv4(), name: 'Página 1', components: [] }];
+
+     // inicializar valores visibles por defecto si ya hay componentes cargados
+  
   }
+
+  //para el panel izquierdo para agregar widgets al canvas
   addPantalla(): void {
     const nueva: pantalla = {
       id: uuidv4(),
@@ -116,353 +129,213 @@ export class RoomsComponent implements OnInit {
     this.currentPantalla = index;
     this.selectedComponent = null;
   }
-  // Métodos para la creación de widgets
-  addContainer(parentId: string | null = null, top: number = 20, left: number = 20): CanvasComponent {
-    const comp: CanvasComponent = {
+  addContainer(): void {
+    const newContainer: CanvasComponent = {
       id: uuidv4(),
       type: 'Container',
-      top: top,
-      left: left,
+      top: 50,
+      left: 50,
       width: 100,
       height: 100,
-      decoration: { color: '#ffffff', border: { color: '#000000', width: 1 }, borderRadius: 0 },
-      parentId: parentId,
+      decoration: {
+        color: '#ffffff',
+        border: {
+          color: '#000000',
+          width: 1
+        },
+        borderRadius: 4
+      },
       children: [],
+      parentId: null
     };
-
-    if (parentId) {
-      this.addChildToParent(comp, parentId);
-    } else {
-      this.pantallas[this.currentPantalla].components.push(comp);
-    }
-
-    return comp;
+  
+    this.pantallas[this.currentPantalla].components.push(newContainer);
+    this.selectedComponent = newContainer;
   }
+//fin
 
-  addColumn(parentId: string | null = null, top: number = 20, left: number = 20): CanvasComponent {
-    const comp: CanvasComponent = {
-      id: uuidv4(),
-      type: 'Column',
-      top: top,
-      left: left,
-      width: 120,
-      height: 150,
-      decoration: { color: '#f0f0f0', border: { color: '#000000', width: 1 }, borderRadius: 0 },
-      parentId: parentId,
-      children: [],
-    };
-
-    if (parentId) {
-      this.addChildToParent(comp, parentId);
-    } else {
-      this.pantallas[this.currentPantalla].components.push(comp);
+//para el panel derecho encargado de actualizar las propiedades de un widget
+  updateProperty(key: keyof CanvasComponent | string, value: any): void {
+    if (!this.selectedComponent) return;
+  
+    const keys = key.split('.');
+    let target: any = this.selectedComponent;
+  
+    while (keys.length > 1) {
+      const prop = keys.shift()!;
+      if (!(prop in target)) target[prop] = {};
+      target = target[prop];
     }
-
-    return comp;
-  }
-
-  addText(parentId: string | null = null, top: number = 20, left: number = 20): CanvasComponent {
-    const comp: CanvasComponent = {
-      id: uuidv4(),
-      type: 'Text',
-      top: top,
-      left: left,
-      width: 100,
-      height: 30,
-      text: 'Texto',
-      decoration: { color: 'transparent', border: { color: '#000000', width: 0 }, borderRadius: 0 },
-      parentId: parentId,
-      children: [],
-    };
-
-    if (parentId) {
-      this.addChildToParent(comp, parentId);
-    } else {
-      this.pantallas[this.currentPantalla].components.push(comp);
-    }
-
-    return comp;
-  }
-
-  addDropdown(parentId: string | null = null, top: number = 20, left: number = 20): CanvasComponent {
-    const comp: CanvasComponent = {
-      id: uuidv4(),
-      type: 'DropdownButton',
-      top: top,
-      left: left,
-      width: 140,
-      height: 40,
-      decoration: { color: '#ffffff', border: { color: '#000000', width: 1 }, borderRadius: 4 },
-      parentId: parentId,
-      children: [],
-    };
-
-    if (parentId) {
-      this.addChildToParent(comp, parentId);
-    } else {
-      this.pantallas[this.currentPantalla].components.push(comp);
-    }
-
-    return comp;
-  }
-
-  // Métodos del menú contextual
-  onContextMenu(event: MouseEvent, comp: CanvasComponent): void {
-    event.preventDefault();
-
-    // Obtener la posición relativa del canvas
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-
-    this.contextMenu = {
-      visible: true,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-      targetComponent: comp
-    };
-
+  
+    target[keys[0]] = value;
     this.cdr.detectChanges();
   }
 
-  hideContextMenu(): void {
-    this.contextMenu.visible = false;
-    this.cdr.detectChanges();
+  getEventValue(event: Event): string {
+    const target = event.target as HTMLInputElement | null;
+    return target?.value || '';
+  }
+  getInputValue(event: Event): string {
+    return (event.target as HTMLInputElement)?.value || '';
+  }
+  
+  getInputNumberValue(event: Event): number {
+    const value = (event.target as HTMLInputElement)?.value;
+    return value !== undefined ? +value : 0;
   }
 
-  // Agregar un widget hijo a través del menú contextual
-  addChildWidget(type: string): void {
-    if (!this.contextMenu.targetComponent) return;
+  
+//fin
 
-    const parentId = this.contextMenu.targetComponent.id;
+//para el drag and drop o movimiento
+onMouseDown(event: MouseEvent, component: CanvasComponent): void {
+  event.stopPropagation();
+  this.selectedComponent = component;
 
-    // Agregar hijo con una posición relativa dentro del padre
-    const offsetX = 10;
-    const offsetY = 10;
+  this.dragState = {
+    isDragging: true,
+    component,
+    startX: event.clientX,
+    startY: event.clientY,
+    initialLeft: component.left ?? 0,
+    initialTop: component.top ?? 0
+  };
+}
 
-    switch (type) {
-      case 'Container':
-        this.addContainer(parentId, offsetY, offsetX);
-        break;
-      case 'Column':
-        this.addColumn(parentId, offsetY, offsetX);
-        break;
-      case 'Text':
-        this.addText(parentId, offsetY, offsetX);
-        break;
-      case 'DropdownButton':
-        this.addDropdown(parentId, offsetY, offsetX);
-        break;
-    }
+onMouseMove(event: MouseEvent): void {
+  if (!this.dragState.isDragging || !this.dragState.component) return;
 
-    this.hideContextMenu();
-  }
+  const deltaX = event.clientX - this.dragState.startX;
+  const deltaY = event.clientY - this.dragState.startY;
 
-  // Método auxiliar para encontrar un componente por ID
-  findComponentById(id: string): CanvasComponent | null {
-    // Primero buscar en los componentes de nivel superior
-    const rootComponent = this.pantallas[this.currentPantalla].components.find(c => c.id === id);
-    if (rootComponent) return rootComponent;
+  this.dragState.component.left = this.dragState.initialLeft + deltaX;
+  this.dragState.component.top = this.dragState.initialTop + deltaY;
 
-    // Si no se encuentra en el nivel superior, buscar recursivamente en los hijos
-    return this.findComponentInChildren(this.pantallas[0].components, id);
-  }
+  this.cdr.detectChanges();
+}
 
-  findComponentInChildren(components: CanvasComponent[], id: string): CanvasComponent | null {
-    for (const component of components) {
-      if (component.id === id) return component;
-
-      if (component.children && component.children.length > 0) {
-        const found = this.findComponentInChildren(component.children, id);
-        if (found) return found;
-      }
-    }
-
-    return null;
-  }
-
-  // Agregar un hijo a un componente padre
-  addChildToParent(child: CanvasComponent, parentId: string): void {
-    const parent = this.findComponentById(parentId);
-
-    if (parent) {
-      parent.children.push(child);
-      child.parentId = parent.id;
-    }
-  }
-
-  // Selección de componentes
-  selectComponent(comp: CanvasComponent, event: MouseEvent): void {
-    event.stopPropagation();
-    this.selectedComponent = comp;
-  }
-
-  // Funcionalidad de arrastrar y soltar
-  onMouseDown(event: MouseEvent, comp: CanvasComponent): void {
-    if (event.button !== 0) return; // Solo proceder con clic izquierdo
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.dragState.isDragging = true;
-    this.dragState.component = comp;
-
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-    this.dragState.startX = event.clientX - rect.left;
-    this.dragState.startY = event.clientY - rect.top;
-    this.dragState.initialLeft = comp.left;
-    this.dragState.initialTop = comp.top;
-
-    // Seleccionar el componente que se está arrastrando
-    this.selectedComponent = comp;
-  }
-
-  onMouseMove(event: MouseEvent): void {
-    if (!this.dragState.isDragging || !this.dragState.component) return;
-
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-    const dx = event.clientX - rect.left - this.dragState.startX;
-    const dy = event.clientY - rect.top - this.dragState.startY;
-
-    this.dragState.component.left = this.dragState.initialLeft + dx;
-    this.dragState.component.top = this.dragState.initialTop + dy;
-
-    this.cdr.detectChanges();
-  }
-
-  onMouseUp(event: MouseEvent): void {
+onMouseUp(event: MouseEvent): void {
+  if (this.dragState.isDragging) {
     this.dragState.isDragging = false;
     this.dragState.component = null;
   }
+}
 
-  // Método auxiliar para obtener la posición absoluta de un componente
-  getAbsolutePosition(comp: CanvasComponent): { top: number, left: number } {
-    let top = comp.top;
-    let left = comp.left;
+//fin
+getComponentStyle(comp: CanvasComponent): any {
+  const style: any = {
+    width: comp.width + 'px',
+    height: comp.height + 'px',
+    backgroundColor: comp.decoration.color,
+    border: `${comp.decoration.border.width}px solid ${comp.decoration.border.color}`,
+    borderRadius: comp.decoration.borderRadius + 'px',
+    position: 'absolute'
+  };
 
-    // Si tiene un padre, agregar la posición del padre
-    if (comp.parentId) {
-      const parent = this.findComponentById(comp.parentId);
-      if (parent) {
-        const parentPos = this.getAbsolutePosition(parent);
-        top += parentPos.top;
-        left += parentPos.left;
-      }
+  if (!comp.alignment) {
+    style.top = comp.top + 'px';
+    style.left = comp.left + 'px';
+    return style;
+  }
+
+  // Canvas dimensions
+  const canvasWidth = 360;
+  const canvasHeight = 812;
+
+  const x = {
+    left: 0,
+    center: (canvasWidth - comp.width) / 2,
+    right: canvasWidth - comp.width
+  };
+
+  const y = {
+    top: 0,
+    center: (canvasHeight - comp.height) / 2,
+    bottom: canvasHeight - comp.height
+  };
+
+  const alignmentMap: Record<string, { top: number; left: number }> = {
+    topLeft: { top: y.top, left: x.left },
+    topCenter: { top: y.top, left: x.center },
+    topRight: { top: y.top, left: x.right },
+    centerLeft: { top: y.center, left: x.left },
+    center: { top: y.center, left: x.center },
+    centerRight: { top: y.center, left: x.right },
+    bottomLeft: { top: y.bottom, left: x.left },
+    bottomCenter: { top: y.bottom, left: x.center },
+    bottomRight: { top: y.bottom, left: x.right }
+  };
+
+  const pos = alignmentMap[comp.alignment];
+  style.top = pos.top + 'px';
+  style.left = pos.left + 'px';
+
+  return style;
+}
+getPantallaSinTopLeft(): CanvasComponent[] {
+  return this.pantallas[this.currentPantalla].components.map((comp) => {
+    const clone: CanvasComponent = JSON.parse(JSON.stringify(comp));
+
+    if (clone.alignment) {
+      delete clone.top;
+      delete clone.left;
     }
 
-    return { top, left };
-  }
+    return clone;
+  });
+}
 
-  // Generar estilos para la representación de componentes
-  getComponentStyles(comp: CanvasComponent): any {
-    // Para componentes raíz, usar su posición directa
-    if (!comp.parentId) {
-      return {
-        top: comp.top + 'px',
-        left: comp.left + 'px',
-        width: comp.width + 'px',
-        height: comp.height + 'px',
-        backgroundColor: comp.decoration?.color,
-        border: comp.decoration?.border?.width + 'px solid ' + comp.decoration?.border?.color,
-        borderRadius: comp.decoration?.borderRadius + 'px'
-      };
+//exportar flutter codigo en el modal
+generateFlutterCode(): string {
+  const components = this.getPantallaSinTopLeft();
+
+  const widgets = components.map((comp) => {
+    const props = [];
+
+    props.push(`width: ${comp.width}`);
+    props.push(`height: ${comp.height}`);
+    props.push(`color: Color(0xFF${comp.decoration.color.replace('#', '')})`);
+    props.push(`borderRadius: BorderRadius.circular(${comp.decoration.borderRadius})`);
+    props.push(`decoration: BoxDecoration(
+      color: Color(0xFF${comp.decoration.color.replace('#', '')}),
+      border: Border.all(color: Color(0xFF${comp.decoration.border.color.replace('#', '')}), width: ${comp.decoration.border.width}),
+      borderRadius: BorderRadius.circular(${comp.decoration.borderRadius}),
+    )`);
+
+    const container = `Container(
+  width: ${comp.width},
+  height: ${comp.height},
+  decoration: BoxDecoration(
+    color: Color(0xFF${comp.decoration.color.replace('#', '')}),
+    border: Border.all(color: Color(0xFF${comp.decoration.border.color.replace('#', '')}), width: ${comp.decoration.border.width}),
+    borderRadius: BorderRadius.circular(${comp.decoration.borderRadius}),
+  ),
+)`;
+
+    if (comp.alignment) {
+      return `Align(
+  alignment: Alignment.${comp.alignment},
+  child: ${container},
+)`;
+    } else {
+      return `Positioned(
+  top: ${comp.top},
+  left: ${comp.left},
+  child: ${container},
+)`;
     }
+  }).join(',\n\n');
 
-    // Para componentes hijos, la posición es relativa al padre
-    return {
-      top: comp.top + 'px',
-      left: comp.left + 'px',
-      width: comp.width + 'px',
-      height: comp.height + 'px',
-      backgroundColor: comp.decoration?.color,
-      border: comp.decoration?.border?.width + 'px solid ' + comp.decoration?.border?.color,
-      borderRadius: comp.decoration?.borderRadius + 'px',
-      position: 'absolute'
-    };
-  }
-
-  getJsonCompleto(): string {
-    const result: Record<string, CanvasComponent[]> = {};
-
-    for (const pantalla of this.pantallas) {
-      result[pantalla.name] = pantalla.components;
-    }
-
-    return JSON.stringify(result, null, 2);
-  }
-  generarCodigoFlutter(): string {
-    const rootWidgets = this.pantallas[this.currentPantalla]?.components || [];
-
-    const flutterCode = rootWidgets.map(c => this.generarWidget(c, true)).join(',\n');
-
-    return `
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-  ${flutterCode.split('\n').map(line => '        ' + line).join('\n')}
-        ],
-      ),
-    );
-  }`.trim();
-  }
-
-  generarWidget(comp: CanvasComponent, esRaiz: boolean): string {
-    const color = comp.decoration?.color ?? '#FFFFFF';
-    const borderRadius = comp.decoration?.borderRadius ?? 0;
-    const borderWidth = comp.decoration?.border?.width ?? 0;
-    const borderColor = comp.decoration?.border?.color ?? '#000000';
-  
-    const width = comp.width;
-    const height = comp.height;
-  
-    const childWidgets = (comp.children || []).map(child => this.generarWidget(child, false)).join(',\n');
-  
-    let baseWidget = '';
-  
-    switch (comp.type) {
-      case 'Text':
-        baseWidget = `Text('${comp.text || ''}')`;
-        break;
-  
-      case 'DropdownButton':
-        baseWidget = `DropdownButton(items: [], onChanged: (_) {}, hint: Text('Dropdown'))`;
-        break;
-  
-      case 'Column':
-        baseWidget = `Column(
-          children: [
-  ${childWidgets.split('\n').map(l => '          ' + l).join('\n')}
-          ],
-        )`;
-        break;
-  
-      case 'Container':
-      default:
-        const childContent = comp.children && comp.children.length > 0
-          ? `child: Stack(children: [\n${childWidgets.split('\n').map(l => '          ' + l).join('\n')}\n        ]),`
-          : 'child: null,';
-  
-        baseWidget = `Container(
-          width: ${width},
-          height: ${height},
-          decoration: BoxDecoration(
-            color: Color(0xFF${color.replace('#', '')}),
-            borderRadius: BorderRadius.circular(${borderRadius}),
-            border: Border.all(color: Color(0xFF${borderColor.replace('#', '')}), width: ${borderWidth}),
-          ),
-          ${childContent}
-        )`;
-        break;
-    }
-  
-    // Envolver en Positioned si tiene top/left definidos
-    return `Positioned(
-      top: ${comp.top},
-      left: ${comp.left},
-      child: ${baseWidget}
-    )`;
-  }
-  
-
-
+  return `@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: Stack(
+      children: [
+${widgets.split('\n').map(line => '        ' + line).join('\n')}
+      ],
+    ),
+  );
+}`;
+}
 
 }
