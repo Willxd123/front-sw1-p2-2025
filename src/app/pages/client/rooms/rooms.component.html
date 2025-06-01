@@ -1,20 +1,36 @@
 <div class="flex h-screen w-full">
   <!-- Columna izquierda: agregar widgets + JSON -->
-  <aside *ngIf="!isPreviewMode" class="w-1/5 bg-gray-100 p-4 border-r border-gray-300 flex flex-col overflow-auto">
-    <button class="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-900 mb-4"
-      (click)="isPreviewMode = !isPreviewMode">
-      👁️ {{ isPreviewMode ? 'Salir de previsualización' : 'Modo previsualización' }}
+  <aside
+    *ngIf="!isPreviewMode"
+    class="w-1/5 bg-gray-100 p-4 border-r border-gray-300 flex flex-col overflow-auto"
+  >
+    <button
+      class="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-900 mb-4"
+      (click)="isPreviewMode = !isPreviewMode"
+    >
+      👁️
+      {{
+        isPreviewMode ? "Salir de previsualización" : "Modo previsualización"
+      }}
     </button>
 
     <!-- Botón Agregar Container -->
-    <button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mb-2" (click)="addContainer()">
+    <button
+      class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mb-2"
+      (click)="addContainer()"
+    >
       ➕ Agregar Container
     </button>
-    <button class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 mb-4"
-      (click)="isModalFlutterCodeOpen = true">
+    <button
+      class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 mb-4"
+      (click)="isModalFlutterCodeOpen = true"
+    >
       📄 Ver código Flutter
     </button>
-    <button class="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 mb-2" (click)="addIconButton()">
+    <button
+      class="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600 mb-2"
+      (click)="addIconButton()"
+    >
       ➕ Agregar IconButton
     </button>
 
@@ -22,189 +38,296 @@
     <div class="mb-4">
       <label class="block text-sm font-semibold mb-2">Pantallas</label>
       <div class="flex flex-wrap gap-2 mb-2">
-        <button *ngFor="let pantalla of pantallas; let i = index" (click)="changePantalla(i)"
-          class="px-2 py-1 rounded border text-sm" [ngClass]="{
-                  'bg-blue-600 text-white': currentPantalla === i,
-                  'bg-white text-gray-800': currentPantalla !== i
-                }">
-          {{ pantalla.name }}
-        </button>
+        <div
+          *ngFor="let pantalla of pages; let i = index"
+          class="flex items-center gap-1"
+        >
+          <button
+            (click)="changePantalla(i)"
+            class="px-2 py-1 rounded border text-sm"
+            [ngClass]="{
+              'bg-blue-600 text-white': currentPantalla === i,
+              'bg-white text-gray-800': currentPantalla !== i
+            }"
+          >
+            {{ pantalla.name }}
+          </button>
+          <button
+            (click)="removePage(pantalla.id)"
+            class="text-red-500 text-sm font-bold px-1 hover:text-red-700"
+            title="Eliminar pantalla"
+          >
+            ✖
+          </button>
+        </div>
       </div>
-      <button class="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700" (click)="addPantalla()">
+      <button
+        class="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700"
+        (click)="addPage()"
+      >
         ➕ Nueva Pantalla
       </button>
     </div>
 
     <!-- JSON del canvas -->
     <h3 class="text-sm font-semibold mb-2">JSON Canvas</h3>
-    <pre class="flex-1 text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap">
+    <pre
+      class="flex-1 text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap"
+    >
       <pre class="flex-1 text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap">
         {{ getPantallaSinTopLeft() | json }}
       </pre>
 
     </pre>
 
-    <h3 class="text-sm font-semibold mb-2 mt-4">JSON completo (todas las pantallas)</h3>
-    <pre class="text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap max-h-64">
+    <h3 class="text-sm font-semibold mb-2 mt-4">
+      JSON completo (todas las pantallas)
+    </h3>
+    <pre
+      class="text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap max-h-64"
+    >
   {{ getJsonCompleto() }}
-</pre>
-
+</pre
+    >
   </aside>
 
-
-
-
-
-
-
-
-
-
-
   <!-- Canvas central: simulación de pantalla móvil -->
-  <main class="flex-1 flex justify-center items-center bg-white pt-20"
-  [ngClass]="{ 'w-full': isPreviewMode, 'w-3/5': !isPreviewMode }">
-  <div #canvas class="relative bg-gray-100 border border-black shadow-lg origin-top"
-    [ngClass]="{ 'scale-100': isPreviewMode, 'scale-[0.75] mt-44': !isPreviewMode }"
-    [ngStyle]="{ width: '360px', height: '812px' }" (mousemove)="!isPreviewMode && onMouseMove($event)"
-    (mouseup)="!isPreviewMode && onMouseUp($event)">
-
-    <!-- Renderizado recursivo -->
-    <ng-container *ngFor="let comp of pantallas[isPreviewMode ? previewPantallaIndex : currentPantalla].components">
-      <ng-container *ngTemplateOutlet="renderComponent; context: { comp: comp }"></ng-container>
-    </ng-container>
-
-    <!-- Menú contextual -->
-    <div *ngIf="contextMenu.visible" id="context-menu" [style.left.px]="contextMenu.x" [style.top.px]="contextMenu.y"
-      class="absolute bg-white border rounded shadow z-[1000] min-w-[180px]">
-      <button (click)="addChild(contextMenu.targetId!)" class="block px-4 py-2 hover:bg-gray-100 w-full text-left">
-        ➕ Agregar hijo
-      </button>
-      <button (click)="copyComponent(findComponentById(pantallas[currentPantalla].components, contextMenu.targetId!)!)"
-        class="block px-4 py-2 hover:bg-gray-100 w-full text-left">
-        📄 Copiar
-      </button>
-      <button (click)="cutComponent(findComponentById(pantallas[currentPantalla].components, contextMenu.targetId!)!)"
-        class="block px-4 py-2 hover:bg-gray-100 w-full text-left">
-        ✂️ Cortar
-      </button>
-      <button (click)="pasteComponent(contextMenu.targetId!)"
-        class="block px-4 py-2 hover:bg-gray-100 w-full text-left" [disabled]="!copiedComponent">
-        📋 Pegar dentro
-      </button>
-      <button (click)="removeComponent(contextMenu.targetId!)"
-        class="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600">
-        🗑️ Eliminar
-      </button>
-    </div>
-
-    <!-- Template recursivo -->
-    <ng-template #renderComponent let-comp="comp">
-      <div class="absolute" [ngClass]="{
-        'cursor-move': !isPreviewMode,
-        'ring-2 ring-blue-600': !isPreviewMode && selectedComponent?.id === comp.id
+  <main
+    class="flex-1 flex justify-center items-center bg-white pt-20"
+    [ngClass]="{ 'w-full': isPreviewMode, 'w-3/5': !isPreviewMode }"
+  >
+    <div
+      #canvas
+      class="relative bg-gray-100 border border-black shadow-lg origin-top"
+      [ngClass]="{
+        'scale-100': isPreviewMode,
+        'scale-[0.75] mt-44': !isPreviewMode
       }"
-        [ngStyle]="getComponentStyle(comp)"
-        (click)="!isPreviewMode && selectComponent(comp, $event)"
-        (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-        (mouseup)="isPreviewMode && comp.type === 'IconButton' && comp.navigateTo ? goToPantalla(comp.navigateTo) : null"
-        (contextmenu)="onRightClick($event, comp)">
-        <div class="w-full h-full flex items-center justify-center text-xs text-gray-800">
-          {{ comp.type }}
-        </div>
+      [ngStyle]="{ width: '360px', height: '812px' }"
+      (mousemove)="!isPreviewMode && onMouseMove($event)"
+      (mouseup)="!isPreviewMode && onMouseUp($event)"
+    >
+      <!-- Renderizado recursivo -->
+      <ng-container
+        *ngFor="
+          let comp of pages[
+            isPreviewMode ? previewPantallaIndex : currentPantalla
+          ].components
+        "
+      >
+        <ng-container
+          *ngTemplateOutlet="renderComponent; context: { comp: comp }"
+        ></ng-container>
+      </ng-container>
 
-        <!-- Render hijos recursivamente -->
-        <ng-container *ngFor="let child of comp.children">
-          <ng-container *ngTemplateOutlet="renderComponent; context: { comp: child }"></ng-container>
-        </ng-container>
+      <!-- Menú contextual -->
+      <div
+        *ngIf="contextMenu.visible"
+        id="context-menu"
+        [style.left.px]="contextMenu.x"
+        [style.top.px]="contextMenu.y"
+        class="absolute bg-white border rounded shadow z-[1000] min-w-[180px]"
+      >
+        <button
+          (click)="addChild(contextMenu.targetId!)"
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+        >
+          ➕ Agregar hijo
+        </button>
+        <button
+          (click)="
+            copyComponent(
+              findComponentById(
+                pages[currentPantalla].components,
+                contextMenu.targetId!
+              )!
+            )
+          "
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+        >
+          📄 Copiar
+        </button>
+        <button
+          (click)="
+            cutComponent(
+              findComponentById(
+                pages[currentPantalla].components,
+                contextMenu.targetId!
+              )!
+            )
+          "
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+        >
+          ✂️ Cortar
+        </button>
+        <button
+          (click)="pasteComponent(contextMenu.targetId!)"
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          [disabled]="!copiedComponent"
+        >
+          📋 Pegar dentro
+        </button>
+        <button
+          (click)="removeComponent(contextMenu.targetId!)"
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600"
+        >
+          🗑️ Eliminar
+        </button>
       </div>
-    </ng-template>
 
-  </div>
-</main>
+      <!-- Template recursivo -->
+      <ng-template #renderComponent let-comp="comp">
+        <div
+          class="absolute"
+          [ngClass]="{
+            'cursor-move': !isPreviewMode,
+            'ring-2 ring-blue-600':
+              !isPreviewMode && selectedComponent?.id === comp.id
+          }"
+          [ngStyle]="getComponentStyle(comp)"
+          (click)="!isPreviewMode && selectComponent(comp, $event)"
+          (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
+          (mouseup)="
+            isPreviewMode && comp.type === 'IconButton' && comp.navigateTo
+              ? goToPantalla(comp.navigateTo)
+              : null
+          "
+          (contextmenu)="onRightClick($event, comp)"
+        >
+          <div
+            class="w-full h-full flex items-center justify-center text-xs text-gray-800"
+          >
+            {{ comp.type }}
+          </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          <!-- Render hijos recursivamente -->
+          <ng-container *ngFor="let child of comp.children">
+            <ng-container
+              *ngTemplateOutlet="renderComponent; context: { comp: child }"
+            ></ng-container>
+          </ng-container>
+        </div>
+      </ng-template>
+    </div>
+  </main>
 
   <!-- Columna derecha: panel de configuración -->
-  <aside *ngIf="!isPreviewMode" class="w-1/5 bg-gray-100 p-4 border-l border-gray-300 overflow-auto">
+  <aside
+    *ngIf="!isPreviewMode"
+    class="w-1/5 bg-gray-100 p-4 border-l border-gray-300 overflow-auto"
+  >
     <div *ngIf="selectedComponent" class="space-y-4">
       <h2 class="text-lg font-bold">Propiedades del Container</h2>
 
       <!-- Color -->
       <div>
         <label class="block text-sm font-semibold">Color</label>
-        <input type="color" [value]="selectedComponent.decoration.color"
-          (input)="updateProperty('decoration.color', getInputValue($event))" class="w-full h-8 p-0 border" />
+        <input
+          type="color"
+          [value]="selectedComponent.decoration.color"
+          (input)="updateProperty('decoration.color', getInputValue($event))"
+          class="w-full h-8 p-0 border"
+        />
       </div>
 
       <!-- Ancho -->
       <div>
         <label class="block text-sm font-semibold">Ancho (px)</label>
-        <input type="number" [value]="selectedComponent.width"
-          (input)="updateProperty('width', getInputNumberValue($event))" class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.width"
+          (input)="updateProperty('width', getInputNumberValue($event))"
+          class="w-full border p-1"
+        />
       </div>
 
       <!-- Alto -->
       <div>
         <label class="block text-sm font-semibold">Alto (px)</label>
-        <input type="number" [value]="selectedComponent.height"
-          (input)="updateProperty('height', getInputNumberValue($event))" class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.height"
+          (input)="updateProperty('height', getInputNumberValue($event))"
+          class="w-full border p-1"
+        />
       </div>
 
       <!-- Top -->
       <div>
         <label class="block text-sm font-semibold">Top (px)</label>
-        <input type="number" [value]="selectedComponent.top"
-          (input)="updateProperty('top', getInputNumberValue($event))" [disabled]="selectedComponent.alignment"
-          class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.top"
+          (input)="updateProperty('top', getInputNumberValue($event))"
+          [disabled]="selectedComponent.alignment"
+          class="w-full border p-1"
+        />
       </div>
 
       <!-- Left -->
       <div>
         <label class="block text-sm font-semibold">Left (px)</label>
-        <input type="number" [value]="selectedComponent.left"
-          (input)="updateProperty('left', getInputNumberValue($event))" [disabled]="selectedComponent.alignment"
-          class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.left"
+          (input)="updateProperty('left', getInputNumberValue($event))"
+          [disabled]="selectedComponent.alignment"
+          class="w-full border p-1"
+        />
       </div>
 
       <!-- Color del borde -->
       <div>
         <label class="block text-sm font-semibold">Color del borde</label>
-        <input type="color" [value]="selectedComponent.decoration.border.color"
-          (input)="updateProperty('decoration.border.color', getInputValue($event))" class="w-full h-8 p-0 border" />
+        <input
+          type="color"
+          [value]="selectedComponent.decoration.border.color"
+          (input)="
+            updateProperty('decoration.border.color', getInputValue($event))
+          "
+          class="w-full h-8 p-0 border"
+        />
       </div>
 
       <!-- Grosor del borde -->
       <div>
         <label class="block text-sm font-semibold">Grosor del borde (px)</label>
-        <input type="number" [value]="selectedComponent.decoration.border.width"
-          (input)="updateProperty('decoration.border.width', getInputNumberValue($event))" class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.decoration.border.width"
+          (input)="
+            updateProperty(
+              'decoration.border.width',
+              getInputNumberValue($event)
+            )
+          "
+          class="w-full border p-1"
+        />
       </div>
 
       <!-- Radio de borde -->
       <div>
         <label class="block text-sm font-semibold">Radio de borde (px)</label>
-        <input type="number" [value]="selectedComponent.decoration.borderRadius"
-          (input)="updateProperty('decoration.borderRadius', getInputNumberValue($event))" class="w-full border p-1" />
+        <input
+          type="number"
+          [value]="selectedComponent.decoration.borderRadius"
+          (input)="
+            updateProperty(
+              'decoration.borderRadius',
+              getInputNumberValue($event)
+            )
+          "
+          class="w-full border p-1"
+        />
       </div>
       <!-- Alineación -->
       <div>
         <label class="block text-sm font-semibold">Alineación</label>
-        <select class="w-full border p-1" [value]="selectedComponent.alignment || ''"
-          (change)="updateProperty('alignment', getInputValue($event))">
+        <select
+          class="w-full border p-1"
+          [value]="selectedComponent.alignment || ''"
+          (change)="updateProperty('alignment', getInputValue($event))"
+        >
           <option value="">-- Sin alineación (usar top/left) --</option>
           <option value="topLeft">Arriba izquierda</option>
           <option value="topCenter">Arriba centro</option>
@@ -222,26 +345,41 @@
         <!-- Tooltip -->
         <div>
           <label class="block text-sm font-semibold">Tooltip</label>
-          <input type="text" [value]="selectedComponent.tooltip || ''"
-            (input)="updateProperty('tooltip', getInputValue($event))" class="w-full border p-1" />
+          <input
+            type="text"
+            [value]="selectedComponent.tooltip || ''"
+            (input)="updateProperty('tooltip', getInputValue($event))"
+            class="w-full border p-1"
+          />
         </div>
 
         <!-- Icono -->
         <div>
           <label class="block text-sm font-semibold">Ícono</label>
-          <input type="text" [value]="selectedComponent.icon || ''"
-            (input)="updateProperty('icon', getInputValue($event))" class="w-full border p-1" />
-          <small class="text-xs text-gray-500">Ej: home_outlined, settings, arrow_back</small>
+          <input
+            type="text"
+            [value]="selectedComponent.icon || ''"
+            (input)="updateProperty('icon', getInputValue($event))"
+            class="w-full border p-1"
+          />
+          <small class="text-xs text-gray-500"
+            >Ej: home_outlined, settings, arrow_back</small
+          >
         </div>
         <!-- Ruta de navegación (pantalla o personalizada) -->
         <div>
           <label class="block text-sm font-semibold">Ruta de navegación</label>
-          <select class="w-full border p-1 mb-1" [value]="selectedComponent.navigateTo || ''"
-            (change)="handleNavigateToChange($event)">
-            <option [value]="''" disabled>Seleccionar pantalla existente...</option>
+          <select
+            class="w-full border p-1 mb-1"
+            [value]="selectedComponent.navigateTo || ''"
+            (change)="handleNavigateToChange($event)"
+          >
+            <option [value]="''" disabled>
+              Seleccionar pantalla existente...
+            </option>
 
             <!-- Usamos un método en TS para limpiar rutas -->
-            <option *ngFor="let p of pantallas" [value]="getRutaPantalla(p.name)">
+            <option *ngFor="let p of pages" [value]="getRutaPantalla(p.name)">
               {{ getRutaPantalla(p.name) }}
             </option>
 
@@ -250,27 +388,36 @@
 
           <!-- Campo visible solo si el usuario quiere una ruta manual -->
           <div *ngIf="selectedComponent.navigateTo === 'custom'">
-            <input type="text" class="w-full border p-1 mt-1" placeholder="/ruta-personalizada"
-              [(ngModel)]="pantallaCustomRoute" (input)="updateProperty('navigateTo', pantallaCustomRoute)" />
+            <input
+              type="text"
+              class="w-full border p-1 mt-1"
+              placeholder="/ruta-personalizada"
+              [(ngModel)]="pantallaCustomRoute"
+              (input)="updateProperty('navigateTo', pantallaCustomRoute)"
+            />
           </div>
         </div>
-
-
-
       </div>
-
     </div>
   </aside>
-
 </div>
 
-<div *ngIf="isModalFlutterCodeOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white w-[90%] max-w-4xl max-h-[90%] overflow-auto rounded-lg shadow-lg p-4 relative">
-    <button class="absolute top-2 right-2 text-gray-700 hover:text-black text-xl"
-      (click)="isModalFlutterCodeOpen = false">&times;</button>
+<div
+  *ngIf="isModalFlutterCodeOpen"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+>
+  <div
+    class="bg-white w-[90%] max-w-4xl max-h-[90%] overflow-auto rounded-lg shadow-lg p-4 relative"
+  >
+    <button
+      class="absolute top-2 right-2 text-gray-700 hover:text-black text-xl"
+      (click)="isModalFlutterCodeOpen = false"
+    >
+      &times;
+    </button>
     <h2 class="text-lg font-bold mb-2">Código Flutter generado</h2>
-    <pre class="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap">
-{{ generateFlutterCode() }}
+    <pre class="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap"
+      >{{ generateFlutterCode() }}
     </pre>
   </div>
 </div>

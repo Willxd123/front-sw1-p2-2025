@@ -3,7 +3,7 @@ import {
   Component,
   ElementRef,
   OnInit,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { SokectSevice } from '../../../services/socket.service';
@@ -21,7 +21,7 @@ interface DragState {
   initialTop: number;
 }
 
-interface pantalla {
+interface Page {
   id: string;
   name: string;
   components: CanvasComponent[];
@@ -43,14 +43,21 @@ interface CanvasComponent {
     borderRadius: number;
   };
   text?: string;
-  alignment?: 'topLeft' | 'topCenter' | 'topRight' |
-  'centerLeft' | 'center' | 'centerRight' |
-  'bottomLeft' | 'bottomCenter' | 'bottomRight';
+  alignment?:
+    | 'topLeft'
+    | 'topCenter'
+    | 'topRight'
+    | 'centerLeft'
+    | 'center'
+    | 'centerRight'
+    | 'bottomLeft'
+    | 'bottomCenter'
+    | 'bottomRight';
 
   options?: string[];
-  icon?: string;           // Nombre del icono, ej. "home_outlined"
-  tooltip?: string;        // Texto tooltip
-  navigateTo?: string;     // Ruta de navegación, ej. "/pantalla2"
+  icon?: string; // Nombre del icono, ej. "home_outlined"
+  tooltip?: string; // Texto tooltip
+  navigateTo?: string; // Ruta de navegación, ej. "/pantalla2"
 
   children: CanvasComponent[];
   parentId: string | null;
@@ -63,31 +70,25 @@ interface ContextMenu {
   targetId: string | null;
 }
 
-
 @Component({
   selector: 'app-rooms',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    DragDropModule,
-  ],
+  imports: [CommonModule, FormsModule, RouterModule, DragDropModule],
   templateUrl: './rooms.component.html',
   styleUrls: ['./rooms.component.css'],
 })
 export class RoomsComponent implements OnInit {
-  @ViewChild('canvas', { static: false }) canvasRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('canvas', { static: false })
+  canvasRef!: ElementRef<HTMLDivElement>;
 
-  pantallas: pantalla[] = [];
+  pages: Page[] = [];
   selectedComponent: CanvasComponent | null = null;
   contextMenu: ContextMenu = {
     visible: false,
     x: 0,
     y: 0,
-    targetId: null
+    targetId: null,
   };
-
 
   components: CanvasComponent[] = [];
   private dragState: DragState = {
@@ -118,23 +119,96 @@ export class RoomsComponent implements OnInit {
     private sokectService: SokectSevice,
     private router: Router,
     private cdr: ChangeDetectorRef,
-  ) { }
-
+    private SokectSevice: SokectSevice
+  ) {}
+  roomCode: string = '';
+  roomName: string = '';
+  roomId: number = 0;
+  errorMessage: string = '';
+  usersInRoom: any[] = [];
+  showParticipants: boolean = false;
   ngOnInit(): void {
-    /*     this.pantallas = [{ id: uuidv4(), name: 'Pantalla 1', components: [] }];
-     */
+    this.roomCode = this.route.snapshot.paramMap.get('code') || '';
 
-    // Detectar tecla Escape
+    if (this.roomCode) {
+      this.SokectSevice.joinRoom(this.roomCode);
+    }
+
+    // Escucha el canvas inicial
+    this.SokectSevice.onInitialCanvasLoad().subscribe((pages) => {
+      this.pages = pages;
+
+      if (pages.length === 0) {
+        this.addPage(); // Emitirá la creación por socket si es el primero
+      } else {
+        this.currentPantalla = 0;
+      }
+
+      this.cdr.detectChanges();
+    });
+
+    // Escucha nuevas páginas agregadas por otros usuarios
+    this.SokectSevice.onPageAdded().subscribe((page: Page) => {
+      const yaExiste = this.pages.some((p) => p.id === page.id);
+      if (!yaExiste) {
+        this.pages.push(page);
+        this.currentPantalla = this.pages.length - 1;
+        this.selectedComponent = null;
+        this.cdr.detectChanges();
+      }
+    });
+    this.SokectSevice.onPageRemoved().subscribe((pageId: string) => {
+      this.pages = this.pages.filter((p) => p.id !== pageId);
+      if (this.currentPantalla >= this.pages.length) {
+        this.currentPantalla = this.pages.length - 1;
+      }
+      this.cdr.detectChanges();
+    });
+    // Escucha otras conexiones
+    this.SokectSevice.onUsersListUpdate().subscribe((users) => {
+      this.usersInRoom = users;
+      this.cdr.detectChanges();
+    });
+    this.SokectSevice.onComponentAdded().subscribe(({ pageId, component }) => {
+      const page = this.pages.find((p) => p.id === pageId);
+      if (page) {
+        page.components.push(component);
+        this.selectedComponent = component;
+        this.cdr.detectChanges();
+      }
+    });
+this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentId, updates }) => {
+  const page = this.pages.find((p) => p.id === pageId);
+  if (!page) return;
+
+  const component = this.findComponentById(page.components, componentId);
+  if (!component) return;
+
+  const apply = (target: any, keys: string[], value: any) => {
+    while (keys.length > 1) {
+      const key = keys.shift()!;
+      if (!(key in target)) target[key] = {};
+      target = target[key];
+    }
+    target[keys[0]] = value;
+  };
+
+  Object.entries(updates).forEach(([key, value]) => {
+    apply(component, key.split('.'), value);
+  });
+
+  this.cdr.detectChanges();
+});
+
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
-    // Listener global para ocultar el menú contextual si se hace clic fuera
     document.addEventListener('click', this.handleDocumentClick.bind(this));
   }
 
   //para el panel izquierdo para agregar widgets al canvas
   getJsonCompleto(): string {
-    // Limpia cada pantalla usando la misma lógica que para el código Dart
-    const pantallasLimpias = this.pantallas.map((pantalla) => {
-      const components = pantalla.components.map((comp) => {
+    // Limpia cada Page usando la misma lógica que para el código Dart
+    const pantallasLimpias = this.pages.map((Page) => {
+      const components = Page.components.map((comp) => {
         const clone: CanvasComponent = JSON.parse(JSON.stringify(comp));
         if (clone.alignment) {
           delete clone.top;
@@ -144,30 +218,47 @@ export class RoomsComponent implements OnInit {
       });
 
       return {
-        id: pantalla.id,
-        name: pantalla.name,
-        components
+        id: Page.id,
+        name: Page.name,
+        components,
       };
     });
 
     return JSON.stringify(pantallasLimpias, null, 2);
   }
-  //agregar pantalla
-  addPantalla(): void {
-    const nueva: pantalla = {
+  //agregar Page
+  addPage(): void {
+    const newPage: Page = {
       id: uuidv4(),
-      name: `Pantalla ${this.pantallas.length + 1}`,
-      components: []
+      name: `Pantalla ${this.pages.length + 1}`,
+      components: [],
     };
-    this.pantallas.push(nueva);
-    this.currentPantalla = this.pantallas.length - 1;
-    this.selectedComponent = null;
+
+    if (this.roomCode) {
+      this.sokectService.addPage(this.roomCode, newPage);
+    }
   }
 
   changePantalla(index: number): void {
     this.currentPantalla = index;
     this.selectedComponent = null;
   }
+
+  removePage(pageId: string): void {
+    if (!this.roomCode) return;
+
+    // Eliminar la página localmente
+    this.pages = this.pages.filter((p) => p.id !== pageId);
+
+    // Ajustar índice actual si es necesario
+    if (this.currentPantalla >= this.pages.length) {
+      this.currentPantalla = Math.max(this.pages.length - 1, 0);
+    }
+
+    this.sokectService.removePage(this.roomCode, pageId);
+    this.cdr.detectChanges();
+  }
+
   addContainer(): void {
     const newContainer: CanvasComponent = {
       id: uuidv4(),
@@ -180,16 +271,16 @@ export class RoomsComponent implements OnInit {
         color: '#ffffff',
         border: {
           color: '#000000',
-          width: 1
+          width: 1,
         },
-        borderRadius: 4
+        borderRadius: 4,
       },
       children: [],
-      parentId: null
+      parentId: null,
     };
+    const pageId = this.pages[this.currentPantalla].id;
 
-    this.pantallas[this.currentPantalla].components.push(newContainer);
-    this.selectedComponent = newContainer;
+    this.sokectService.addCanvasComponent(this.roomCode, pageId, newContainer);
   }
 
   addIconButton(): void {
@@ -204,24 +295,24 @@ export class RoomsComponent implements OnInit {
         color: '#ffffff',
         border: {
           color: '#000000',
-          width: 0
+          width: 0,
         },
-        borderRadius: 8
+        borderRadius: 8,
       },
       icon: 'home_outlined',
-      tooltip: 'Ir a pantalla 2',
+      tooltip: 'Ir a Page 2',
       navigateTo: '/pantalla2',
       children: [],
-      parentId: null
+      parentId: null,
     };
 
-    this.pantallas[this.currentPantalla].components.push(newIconButton);
+    this.pages[this.currentPantalla].components.push(newIconButton);
     this.selectedComponent = newIconButton;
   }
   goToPantalla(ruta: string): void {
     const nombreRuta = ruta.replace('/', '');
-    const index = this.pantallas.findIndex(p =>
-      p.name.toLowerCase().replace(/ /g, '') === nombreRuta
+    const index = this.pages.findIndex(
+      (p) => p.name.toLowerCase().replace(/ /g, '') === nombreRuta
     );
     if (index !== -1) {
       this.previewPantallaIndex = index;
@@ -237,7 +328,7 @@ export class RoomsComponent implements OnInit {
   //fin
 
   //para el panel derecho encargado de actualizar las propiedades de un widget
-  updateProperty(key: keyof CanvasComponent | string, value: any): void {
+  /* updateProperty(key: keyof CanvasComponent | string, value: any): void {
     if (!this.selectedComponent) return;
 
     const keys = key.split('.');
@@ -251,6 +342,22 @@ export class RoomsComponent implements OnInit {
 
     target[keys[0]] = value;
     this.cdr.detectChanges();
+  } */
+  updateProperty(key: string, value: any): void {
+    if (!this.selectedComponent || !this.roomCode) return;
+
+    const pageId = this.pages[this.currentPantalla].id;
+    const componentId = this.selectedComponent.id;
+
+    const updates: any = {};
+    updates[key] = value;
+
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      pageId,
+      componentId,
+      updates
+    );
   }
 
   getEventValue(event: Event): string {
@@ -266,7 +373,6 @@ export class RoomsComponent implements OnInit {
     return value !== undefined ? +value : 0;
   }
 
-
   //fin
 
   //para el drag and drop o movimiento
@@ -280,7 +386,7 @@ export class RoomsComponent implements OnInit {
       startX: event.clientX,
       startY: event.clientY,
       initialLeft: component.left ?? 0,
-      initialTop: component.top ?? 0
+      initialTop: component.top ?? 0,
     };
   }
 
@@ -309,7 +415,6 @@ export class RoomsComponent implements OnInit {
     this.selectedComponent = comp;
     this.contextMenu.visible = false;
   }
-  
 
   //metodos para el menu contextual donde se elimina el widget y otras opciones
   onRightClick(event: MouseEvent, component: CanvasComponent): void {
@@ -323,14 +428,18 @@ export class RoomsComponent implements OnInit {
       visible: true,
       x,
       y,
-      targetId: component.id
+      targetId: component.id,
     };
   }
   //metodo para cerrar el menu contextual
   handleDocumentClick(event: MouseEvent): void {
     // Si el menú está abierto y el clic no fue dentro del menú, lo cerramos
     const menu = document.getElementById('context-menu');
-    if (this.contextMenu.visible && menu && !menu.contains(event.target as Node)) {
+    if (
+      this.contextMenu.visible &&
+      menu &&
+      !menu.contains(event.target as Node)
+    ) {
       this.contextMenu.visible = false;
       this.contextMenu.targetId = null;
       this.cdr.detectChanges();
@@ -339,9 +448,12 @@ export class RoomsComponent implements OnInit {
 
   //metodo recursivo para eliminar un widget
   removeComponent(id: string): void {
-    const pantalla = this.pantallas[this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla];
+    const Page =
+      this.pages[
+        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+      ];
 
-    this.removeRecursive(pantalla.components, id);
+    this.removeRecursive(Page.components, id);
 
     if (this.selectedComponent?.id === id) {
       this.selectedComponent = null;
@@ -353,7 +465,7 @@ export class RoomsComponent implements OnInit {
   }
 
   removeRecursive(list: CanvasComponent[], id: string): boolean {
-    const index = list.findIndex(c => c.id === id);
+    const index = list.findIndex((c) => c.id === id);
     if (index !== -1) {
       list.splice(index, 1);
       return true;
@@ -371,36 +483,39 @@ export class RoomsComponent implements OnInit {
     this.cutMode = false;
     this.contextMenu.visible = false;
   }
-  
+
   cutComponent(comp: CanvasComponent): void {
     this.copiedComponent = JSON.parse(JSON.stringify(comp));
     this.cutMode = true;
     this.contextMenu.visible = false;
   }
-  
+
   pasteComponent(parentId: string): void {
     if (!this.copiedComponent) return;
-  
+
     const pasted = JSON.parse(JSON.stringify(this.copiedComponent));
     pasted.id = uuidv4(); // nueva ID
     pasted.parentId = parentId;
-  
-    const pantalla = this.pantallas[this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla];
-    const parent = this.findComponentById(pantalla.components, parentId);
+
+    const Page =
+      this.pages[
+        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+      ];
+    const parent = this.findComponentById(Page.components, parentId);
     if (parent) {
       parent.children.push(pasted);
     }
-  
+
     if (this.cutMode) {
-      this.removeRecursive(pantalla.components, this.copiedComponent.id);
+      this.removeRecursive(Page.components, this.copiedComponent.id);
       this.cutMode = false;
     }
-  
+
     this.copiedComponent = null;
     this.contextMenu.visible = false;
     this.cdr.detectChanges();
   }
-  
+
   addChild(parentId: string): void {
     const child: CanvasComponent = {
       id: uuidv4(),
@@ -415,20 +530,26 @@ export class RoomsComponent implements OnInit {
         borderRadius: 4,
       },
       children: [],
-      parentId
+      parentId,
     };
-  
-    const pantalla = this.pantallas[this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla];
-    const parent = this.findComponentById(pantalla.components, parentId);
+
+    const Page =
+      this.pages[
+        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+      ];
+    const parent = this.findComponentById(Page.components, parentId);
     if (parent) {
       parent.children.push(child);
     }
-  
+
     this.contextMenu.visible = false;
     this.cdr.detectChanges();
   }
-  
-  findComponentById(list: CanvasComponent[], id: string): CanvasComponent | null {
+
+  findComponentById(
+    list: CanvasComponent[],
+    id: string
+  ): CanvasComponent | null {
     for (const comp of list) {
       if (comp.id === id) return comp;
       if (comp.children?.length) {
@@ -438,9 +559,6 @@ export class RoomsComponent implements OnInit {
     }
     return null;
   }
-  
-
-
 
   //fin
   getComponentStyle(comp: CanvasComponent): any {
@@ -450,35 +568,38 @@ export class RoomsComponent implements OnInit {
       backgroundColor: comp.decoration.color,
       border: `${comp.decoration.border.width}px solid ${comp.decoration.border.color}`,
       borderRadius: comp.decoration.borderRadius + 'px',
-      position: 'absolute'
+      position: 'absolute',
     };
-  
+
     // Buscar padre si el componente es hijo
     const parent = comp.parentId
-      ? this.findComponentById(this.pantallas[this.currentPantalla].components, comp.parentId)
+      ? this.findComponentById(
+          this.pages[this.currentPantalla].components,
+          comp.parentId
+        )
       : null;
-  
+
     const parentWidth = parent?.width || 360;
     const parentHeight = parent?.height || 812;
-  
+
     if (!comp.alignment) {
       style.top = (comp.top ?? 0) + 'px';
       style.left = (comp.left ?? 0) + 'px';
       return style;
     }
-  
+
     const x = {
       left: 0,
       center: (parentWidth - comp.width) / 2,
-      right: parentWidth - comp.width
+      right: parentWidth - comp.width,
     };
-  
+
     const y = {
       top: 0,
       center: (parentHeight - comp.height) / 2,
-      bottom: parentHeight - comp.height
+      bottom: parentHeight - comp.height,
     };
-  
+
     const alignmentMap: Record<string, { top: number; left: number }> = {
       topLeft: { top: y.top, left: x.left },
       topCenter: { top: y.top, left: x.center },
@@ -488,18 +609,18 @@ export class RoomsComponent implements OnInit {
       centerRight: { top: y.center, left: x.right },
       bottomLeft: { top: y.bottom, left: x.left },
       bottomCenter: { top: y.bottom, left: x.center },
-      bottomRight: { top: y.bottom, left: x.right }
+      bottomRight: { top: y.bottom, left: x.right },
     };
-  
+
     const pos = alignmentMap[comp.alignment];
     style.top = pos.top + 'px';
     style.left = pos.left + 'px';
-  
+
     return style;
   }
-  
+
   getPantallaSinTopLeft(): CanvasComponent[] {
-    return this.pantallas[this.currentPantalla].components.map((comp) => {
+    return this.pages[this.currentPantalla].components.map((comp) => {
       const clone: CanvasComponent = JSON.parse(JSON.stringify(comp));
 
       if (clone.alignment) {
@@ -529,15 +650,16 @@ export class RoomsComponent implements OnInit {
   generateFlutterCode(): string {
     const components = this.getPantallaSinTopLeft();
 
-    const widgets = components.map((comp) => {
-      // Si es IconButton
-      if (comp.type === 'IconButton') {
-        const tooltip = comp.tooltip ?? '';
-        const icon = comp.icon ?? 'help_outline';
-        const route = comp.navigateTo ?? '/';
+    const widgets = components
+      .map((comp) => {
+        // Si es IconButton
+        if (comp.type === 'IconButton') {
+          const tooltip = comp.tooltip ?? '';
+          const icon = comp.icon ?? 'help_outline';
+          const route = comp.navigateTo ?? '/';
 
-        if (comp.alignment) {
-          return `Align(
+          if (comp.alignment) {
+            return `Align(
   alignment: Alignment.${comp.alignment},
   child: IconButton(
     tooltip: '${tooltip}',
@@ -547,8 +669,8 @@ export class RoomsComponent implements OnInit {
     },
   ),
 )`;
-        } else {
-          return `Positioned(
+          } else {
+            return `Positioned(
   top: ${comp.top ?? 0},
   left: ${comp.left ?? 0},
   child: IconButton(
@@ -559,11 +681,11 @@ export class RoomsComponent implements OnInit {
     },
   ),
 )`;
+          }
         }
-      }
 
-      // Si es Container
-      const container = `Container(
+        // Si es Container
+        const container = `Container(
   width: ${comp.width},
   height: ${comp.height},
   decoration: BoxDecoration(
@@ -576,31 +698,33 @@ export class RoomsComponent implements OnInit {
   ),
 )`;
 
-      if (comp.alignment) {
-        return `Align(
+        if (comp.alignment) {
+          return `Align(
   alignment: Alignment.${comp.alignment},
   child: ${container},
 )`;
-      } else {
-        return `Positioned(
+        } else {
+          return `Positioned(
   top: ${comp.top ?? 0},
   left: ${comp.left ?? 0},
   child: ${container},
 )`;
-      }
-    }).join(',\n\n');
+        }
+      })
+      .join(',\n\n');
 
     return `@override
 Widget build(BuildContext context) {
   return Scaffold(
     body: Stack(
       children: [
-${widgets.split('\n').map(line => '        ' + line).join('\n')}
+${widgets
+  .split('\n')
+  .map((line) => '        ' + line)
+  .join('\n')}
       ],
     ),
   );
 }`;
   }
-
-
 }
