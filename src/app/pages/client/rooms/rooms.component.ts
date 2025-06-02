@@ -104,6 +104,7 @@ export class RoomsComponent implements OnInit {
 
   isPreviewMode: boolean = false;
   previewPantallaIndex: number = 0;
+  currentUserId: number = 0;
 
   dropdownSelectionMap: Record<string, string> = {};
 
@@ -177,28 +178,46 @@ export class RoomsComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentId, updates }) => {
-  const page = this.pages.find((p) => p.id === pageId);
-  if (!page) return;
+    this.SokectSevice.onComponentPropertiesUpdated().subscribe(
+      ({ pageId, componentId, updates }) => {
+        const page = this.pages.find((p) => p.id === pageId);
+        if (!page) return;
 
-  const component = this.findComponentById(page.components, componentId);
-  if (!component) return;
+        const component = this.findComponentById(page.components, componentId);
+        if (!component) return;
 
-  const apply = (target: any, keys: string[], value: any) => {
-    while (keys.length > 1) {
-      const key = keys.shift()!;
-      if (!(key in target)) target[key] = {};
-      target = target[key];
-    }
-    target[keys[0]] = value;
-  };
+        const apply = (target: any, keys: string[], value: any) => {
+          while (keys.length > 1) {
+            const key = keys.shift()!;
+            if (!(key in target)) target[key] = {};
+            target = target[key];
+          }
+          target[keys[0]] = value;
+        };
 
-  Object.entries(updates).forEach(([key, value]) => {
-    apply(component, key.split('.'), value);
-  });
+        Object.entries(updates).forEach(([key, value]) => {
+          apply(component, key.split('.'), value);
+        });
 
-  this.cdr.detectChanges();
-});
+        this.cdr.detectChanges();
+      }
+    );
+    //movimiento
+    this.SokectSevice.onComponentMoved().subscribe(
+      ({ pageId, componentId, newPosition }) => {
+        const page = this.pages.find((p) => p.id === pageId);
+        if (!page) return;
+
+        const comp = page.components.find((c) => c.id === componentId);
+        if (!comp) return;
+
+        // Actualizar posición visual
+        comp.left = newPosition.left;
+        comp.top = newPosition.top;
+
+        this.cdr.detectChanges();
+      }
+    );
 
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     document.addEventListener('click', this.handleDocumentClick.bind(this));
@@ -306,8 +325,9 @@ this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentI
       parentId: null,
     };
 
-    this.pages[this.currentPantalla].components.push(newIconButton);
-    this.selectedComponent = newIconButton;
+    const pageId = this.pages[this.currentPantalla].id;
+
+  this.sokectService.addCanvasComponent(this.roomCode, pageId, newIconButton);
   }
   goToPantalla(ruta: string): void {
     const nombreRuta = ruta.replace('/', '');
@@ -328,21 +348,7 @@ this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentI
   //fin
 
   //para el panel derecho encargado de actualizar las propiedades de un widget
-  /* updateProperty(key: keyof CanvasComponent | string, value: any): void {
-    if (!this.selectedComponent) return;
-
-    const keys = key.split('.');
-    let target: any = this.selectedComponent;
-
-    while (keys.length > 1) {
-      const prop = keys.shift()!;
-      if (!(prop in target)) target[prop] = {};
-      target = target[prop];
-    }
-
-    target[keys[0]] = value;
-    this.cdr.detectChanges();
-  } */
+ 
   updateProperty(key: string, value: any): void {
     if (!this.selectedComponent || !this.roomCode) return;
 
@@ -389,7 +395,6 @@ this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentI
       initialTop: component.top ?? 0,
     };
   }
-
   onMouseMove(event: MouseEvent): void {
     if (!this.dragState.isDragging || !this.dragState.component) return;
 
@@ -401,9 +406,56 @@ this.SokectSevice.onComponentPropertiesUpdated().subscribe(({ pageId, componentI
 
     this.cdr.detectChanges();
   }
+ /*  onMouseMove(event: MouseEvent): void {
+    if (!this.dragState.isDragging || !this.dragState.component) return;
 
+    const comp = this.dragState.component;
+
+    // Solo mover si no tiene alignment
+    if (!comp.alignment) {
+      const deltaX = event.clientX - this.dragState.startX;
+      const deltaY = event.clientY - this.dragState.startY;
+
+      comp.left = this.dragState.initialLeft + deltaX;
+      comp.top = this.dragState.initialTop + deltaY;
+
+      // Emitir al socket en tiempo real
+      this.SokectSevice.moveComponent(
+        this.roomCode,
+        this.currentPageId,
+        comp.id,
+        {
+          left: comp.left,
+          top: comp.top,
+          userId: this.currentUserId,
+        }
+      );
+
+      this.cdr.detectChanges();
+    }
+  } */
+
+  get currentPageId(): string {
+    return this.pages[this.currentPantalla]?.id || '';
+  }
   onMouseUp(event: MouseEvent): void {
-    if (this.dragState.isDragging) {
+    if (this.dragState.isDragging && this.dragState.component) {
+      const comp = this.dragState.component;
+
+      // Solo emitir si no hay alignment (se puede mover)
+      if (!comp.alignment) {
+        this.SokectSevice.moveComponent(
+          this.roomCode,
+          this.currentPageId,
+          comp.id,
+          {
+            left: comp.left ?? 0,
+            top: comp.top ?? 0,
+            userId: this.currentUserId, // si lo necesitas en el backend
+          }
+        );
+      }
+
       this.dragState.isDragging = false;
       this.dragState.component = null;
     }
@@ -726,5 +778,11 @@ ${widgets
     ),
   );
 }`;
+  }
+
+
+  downloadAngularProject() {
+    const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;
+    window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
   }
 }
