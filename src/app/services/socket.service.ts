@@ -126,18 +126,24 @@ export class SokectSevice {
   // Agrega estos métodos al SokectSevice
 
   // Para mover componentes
-  moveComponent(roomCode: string, pageId: string, componentId: string, newPosition: { left: string, top: string }) {
+  moveComponent(roomCode: string, pageId: string, componentId: string, newPosition: { left: number, top: number, userId: number }) {
     this.socket.emit('moveComponent', { roomCode, pageId, componentId, newPosition });
   }
   
+  
 
-  onComponentMoved(): Observable<{ componentId: string, newPosition: { left: string, top: string } }> {
+  onComponentMoved(): Observable<{
+    pageId: string;
+    componentId: string;
+    newPosition: { left: number; top: number; userId: number };
+  }> {
     return new Observable((observer) => {
       this.socket.on('componentMoved', (data) => {
         observer.next(data);
       });
     });
   }
+  
 
   // Para transformar componentes (cambiar tamaño)
   transformComponent(roomCode: string, componentId: string, newSize: { width: string, height: string }) {
