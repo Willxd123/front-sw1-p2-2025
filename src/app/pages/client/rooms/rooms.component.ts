@@ -59,6 +59,12 @@ interface CanvasComponent {
   tooltip?: string; // Texto tooltip
   navigateTo?: string; // Ruta de navegación, ej. "/pantalla2"
 
+  // NUEVAS para AppBar
+  title?: string;
+  centerTitle?: boolean;
+  leading?: CanvasComponent | null;
+  actions?: CanvasComponent[];
+
   children: CanvasComponent[];
   parentId: string | null;
 }
@@ -119,8 +125,7 @@ export class RoomsComponent implements OnInit {
     private route: ActivatedRoute,
     private sokectService: SokectSevice,
     private router: Router,
-    private cdr: ChangeDetectorRef,
-    private SokectSevice: SokectSevice
+    private cdr: ChangeDetectorRef
   ) {}
   roomCode: string = '';
   roomName: string = '';
@@ -132,11 +137,11 @@ export class RoomsComponent implements OnInit {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
 
     if (this.roomCode) {
-      this.SokectSevice.joinRoom(this.roomCode);
+      this.sokectService.joinRoom(this.roomCode);
     }
 
     // Escucha el canvas inicial
-    this.SokectSevice.onInitialCanvasLoad().subscribe((pages) => {
+    this.sokectService.onInitialCanvasLoad().subscribe((pages) => {
       this.pages = pages;
 
       if (pages.length === 0) {
@@ -149,7 +154,7 @@ export class RoomsComponent implements OnInit {
     });
 
     // Escucha nuevas páginas agregadas por otros usuarios
-    this.SokectSevice.onPageAdded().subscribe((page: Page) => {
+    this.sokectService.onPageAdded().subscribe((page: Page) => {
       const yaExiste = this.pages.some((p) => p.id === page.id);
       if (!yaExiste) {
         this.pages.push(page);
@@ -158,7 +163,7 @@ export class RoomsComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-    this.SokectSevice.onPageRemoved().subscribe((pageId: string) => {
+    this.sokectService.onPageRemoved().subscribe((pageId: string) => {
       this.pages = this.pages.filter((p) => p.id !== pageId);
       if (this.currentPantalla >= this.pages.length) {
         this.currentPantalla = this.pages.length - 1;
@@ -166,11 +171,12 @@ export class RoomsComponent implements OnInit {
       this.cdr.detectChanges();
     });
     // Escucha otras conexiones
-    this.SokectSevice.onUsersListUpdate().subscribe((users) => {
+    this.sokectService.onUsersListUpdate().subscribe((users) => {
       this.usersInRoom = users;
       this.cdr.detectChanges();
     });
-    this.SokectSevice.onComponentAdded().subscribe(({ pageId, component }) => {
+    //addconteiner
+    this.sokectService.onComponentAdded().subscribe(({ pageId, component }) => {
       const page = this.pages.find((p) => p.id === pageId);
       if (page) {
         page.components.push(component);
@@ -178,8 +184,10 @@ export class RoomsComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
-    this.SokectSevice.onComponentPropertiesUpdated().subscribe(
-      ({ pageId, componentId, updates }) => {
+    //actualizar propiedades de un widget
+    this.sokectService
+      .onComponentPropertiesUpdated()
+      .subscribe(({ pageId, componentId, updates }) => {
         const page = this.pages.find((p) => p.id === pageId);
         if (!page) return;
 
@@ -200,15 +208,16 @@ export class RoomsComponent implements OnInit {
         });
 
         this.cdr.detectChanges();
-      }
-    );
+      });
     //movimiento
-    this.SokectSevice.onComponentMoved().subscribe(
-      ({ pageId, componentId, newPosition }) => {
+    this.sokectService
+      .onComponentMoved()
+      .subscribe(({ pageId, componentId, newPosition }) => {
         const page = this.pages.find((p) => p.id === pageId);
         if (!page) return;
 
-        const comp = page.components.find((c) => c.id === componentId);
+        const comp = this.findComponentById(page.components, componentId);
+
         if (!comp) return;
 
         // Actualizar posición visual
@@ -216,9 +225,46 @@ export class RoomsComponent implements OnInit {
         comp.top = newPosition.top;
 
         this.cdr.detectChanges();
-      }
-    );
+      });
+    //eliminar widget;
+    this.sokectService
+      .onComponentRemoved()
+      .subscribe(({ pageId, componentId }) => {
+        console.log('🧨 Recibido componentRemoved', { pageId, componentId });
 
+        const page = this.pages.find((p) => p.id === pageId);
+        if (page) {
+          this.removeRecursive(page.components, componentId);
+        }
+
+        if (this.selectedComponent?.id === componentId) {
+          this.selectedComponent = null;
+        }
+
+        this.contextMenu.visible = false;
+        this.contextMenu.targetId = null;
+        this.cdr.detectChanges();
+      });
+    //hijos
+    this.sokectService
+      .onChildComponentAdded()
+      .subscribe(({ parentId, childComponent }) => {
+        const page =
+          this.pages[
+            this.isPreviewMode
+              ? this.previewPantallaIndex
+              : this.currentPantalla
+          ];
+
+        const parent = this.findComponentById(page.components, parentId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(childComponent);
+          this.cdr.detectChanges();
+        }
+      });
+    //fin hijos
+    //para el modo previsualizacion
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     document.addEventListener('click', this.handleDocumentClick.bind(this));
   }
@@ -277,6 +323,26 @@ export class RoomsComponent implements OnInit {
     this.sokectService.removePage(this.roomCode, pageId);
     this.cdr.detectChanges();
   }
+  addAppBar(): void {
+    const newAppBar: CanvasComponent = {
+      id: uuidv4(),
+      type: 'AppBar',
+      top: 0,
+      left: 0,
+      width: 360,
+      height: 56,
+      decoration: {
+        color: '#2196f3',
+        border: { color: '#000000', width: 0 },
+        borderRadius: 0,
+      },
+      children: [],
+      parentId: null,
+    };
+
+    const pageId = this.pages[this.currentPantalla].id;
+    this.sokectService.addCanvasComponent(this.roomCode, pageId, newAppBar);
+  }
 
   addContainer(): void {
     const newContainer: CanvasComponent = {
@@ -300,6 +366,37 @@ export class RoomsComponent implements OnInit {
     const pageId = this.pages[this.currentPantalla].id;
 
     this.sokectService.addCanvasComponent(this.roomCode, pageId, newContainer);
+  }
+  addTextChild(parentId: string): void {
+    const child: CanvasComponent = {
+      id: uuidv4(),
+      type: 'Text',
+      text: 'Título',
+      width: 100,
+      height: 30,
+      top: 10,
+      left: 10,
+      decoration: {
+        color: 'transparent',
+        border: { color: '#000000', width: 0 },
+        borderRadius: 0,
+      },
+      children: [],
+      parentId,
+    };
+
+    const pageId =
+      this.pages[
+        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+      ].id;
+
+    this.sokectService.addChildComponent(
+      this.roomCode,
+      parentId,
+      child,
+      pageId
+    );
+    this.contextMenu.visible = false;
   }
 
   addIconButton(): void {
@@ -327,7 +424,7 @@ export class RoomsComponent implements OnInit {
 
     const pageId = this.pages[this.currentPantalla].id;
 
-  this.sokectService.addCanvasComponent(this.roomCode, pageId, newIconButton);
+    this.sokectService.addCanvasComponent(this.roomCode, pageId, newIconButton);
   }
   goToPantalla(ruta: string): void {
     const nombreRuta = ruta.replace('/', '');
@@ -348,7 +445,7 @@ export class RoomsComponent implements OnInit {
   //fin
 
   //para el panel derecho encargado de actualizar las propiedades de un widget
- 
+
   updateProperty(key: string, value: any): void {
     if (!this.selectedComponent || !this.roomCode) return;
 
@@ -406,7 +503,7 @@ export class RoomsComponent implements OnInit {
 
     this.cdr.detectChanges();
   }
- /*  onMouseMove(event: MouseEvent): void {
+  /*  onMouseMove(event: MouseEvent): void {
     if (!this.dragState.isDragging || !this.dragState.component) return;
 
     const comp = this.dragState.component;
@@ -444,7 +541,7 @@ export class RoomsComponent implements OnInit {
 
       // Solo emitir si no hay alignment (se puede mover)
       if (!comp.alignment) {
-        this.SokectSevice.moveComponent(
+        this.sokectService.moveComponent(
           this.roomCode,
           this.currentPageId,
           comp.id,
@@ -461,7 +558,7 @@ export class RoomsComponent implements OnInit {
     }
   }
 
-  //petodo par seleccionar un widget
+  //metodo par seleccionar un widget
   selectComponent(comp: CanvasComponent, event: MouseEvent): void {
     event.stopPropagation(); // evita que un hijo sobreescriba la selección del padre
     this.selectedComponent = comp;
@@ -469,8 +566,14 @@ export class RoomsComponent implements OnInit {
   }
 
   //metodos para el menu contextual donde se elimina el widget y otras opciones
-  onRightClick(event: MouseEvent, component: CanvasComponent): void {
+  pastePosition: { x: number; y: number } | null = null;
+
+  onRightClick(
+    event: MouseEvent,
+    component: CanvasComponent | null = null
+  ): void {
     event.preventDefault();
+    event.stopPropagation();
 
     const canvasRect = this.canvasRef.nativeElement.getBoundingClientRect();
     const x = event.clientX - canvasRect.left;
@@ -480,9 +583,13 @@ export class RoomsComponent implements OnInit {
       visible: true,
       x,
       y,
-      targetId: component.id,
+      targetId: component?.id ?? null,
     };
+
+    // Guardamos la posición del mouse para pegado libre
+    this.pastePosition = component ? null : { x, y };
   }
+
   //metodo para cerrar el menu contextual
   handleDocumentClick(event: MouseEvent): void {
     // Si el menú está abierto y el clic no fue dentro del menú, lo cerramos
@@ -499,21 +606,12 @@ export class RoomsComponent implements OnInit {
   }
 
   //metodo recursivo para eliminar un widget
+
   removeComponent(id: string): void {
-    const Page =
-      this.pages[
-        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
-      ];
+    const page = this.pages[this.currentPantalla];
+    const pageId = page.id;
 
-    this.removeRecursive(Page.components, id);
-
-    if (this.selectedComponent?.id === id) {
-      this.selectedComponent = null;
-    }
-
-    this.contextMenu.visible = false;
-    this.contextMenu.targetId = null;
-    this.cdr.detectChanges();
+    this.sokectService.removeCanvasComponent(this.roomCode, pageId, id);
   }
 
   removeRecursive(list: CanvasComponent[], id: string): boolean {
@@ -522,11 +620,16 @@ export class RoomsComponent implements OnInit {
       list.splice(index, 1);
       return true;
     }
+
     for (const comp of list) {
-      if (comp.children && this.removeRecursive(comp.children, id)) {
-        return true;
+      if (comp.children) {
+        const removed = this.removeRecursive(comp.children, id);
+        if (removed) {
+          return false;
+        }
       }
     }
+
     return false;
   }
 
@@ -541,31 +644,60 @@ export class RoomsComponent implements OnInit {
     this.cutMode = true;
     this.contextMenu.visible = false;
   }
+  onCanvasRightClick(event: MouseEvent): void {
+    event.preventDefault();
 
-  pasteComponent(parentId: string): void {
+    const canvasRect = this.canvasRef.nativeElement.getBoundingClientRect();
+    const x = event.clientX - canvasRect.left;
+    const y = event.clientY - canvasRect.top;
+
+    this.contextMenu = {
+      visible: true,
+      x,
+      y,
+      targetId: null, // 👈 Sin componente objetivo → es canvas
+    };
+  }
+
+  pasteComponent(parentId: string | null = null): void {
     if (!this.copiedComponent) return;
 
     const pasted = JSON.parse(JSON.stringify(this.copiedComponent));
-    pasted.id = uuidv4(); // nueva ID
+    pasted.id = uuidv4();
     pasted.parentId = parentId;
+    pasted.top = this.pastePosition?.y ?? 1;
+    pasted.left = this.pastePosition?.x ?? 1;
 
-    const Page =
+    const pageId =
       this.pages[
         this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
-      ];
-    const parent = this.findComponentById(Page.components, parentId);
-    if (parent) {
-      parent.children.push(pasted);
+      ].id;
+
+    // 🧩 Si hay parentId, es hijo → usamos addChildComponent
+    if (parentId && parentId !== '') {
+      this.sokectService.addChildComponent(
+        this.roomCode,
+        parentId,
+        pasted,
+        pageId
+      );
+    } else {
+      this.sokectService.addCanvasComponent(this.roomCode, pageId, pasted);
     }
 
+    // 🗑️ Si fue cortado, también emitir removeComponent
     if (this.cutMode) {
-      this.removeRecursive(Page.components, this.copiedComponent.id);
+      this.sokectService.removeCanvasComponent(
+        this.roomCode,
+        pageId,
+        this.copiedComponent.id
+      );
       this.cutMode = false;
     }
 
     this.copiedComponent = null;
     this.contextMenu.visible = false;
-    this.cdr.detectChanges();
+    this.pastePosition = null;
   }
 
   addChild(parentId: string): void {
@@ -585,17 +717,19 @@ export class RoomsComponent implements OnInit {
       parentId,
     };
 
-    const Page =
+    const pageId =
       this.pages[
         this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
-      ];
-    const parent = this.findComponentById(Page.components, parentId);
-    if (parent) {
-      parent.children.push(child);
-    }
+      ].id;
+
+    this.sokectService.addChildComponent(
+      this.roomCode,
+      parentId,
+      child,
+      pageId
+    );
 
     this.contextMenu.visible = false;
-    this.cdr.detectChanges();
   }
 
   findComponentById(
@@ -698,88 +832,288 @@ export class RoomsComponent implements OnInit {
     return '/' + nombre.toLowerCase().replace(/ /g, '');
   }
 
-  //exportar flutter codigo en el modal
+  private generateFlutterWidget(comp: any): string {
+    // Extrae ancho, alto y decoración básica de cualquier widget Container/IconButton
+    const width = comp.width ?? 50;
+    const height = comp.height ?? 50;
+    const bgColor = comp.decoration?.color?.replace('#', '') ?? 'ffffff';
+    const borderColor =
+      comp.decoration?.border?.color?.replace('#', '') ?? '000000';
+    const borderWidth = comp.decoration?.border?.width ?? 0;
+    const borderRadius = comp.decoration?.borderRadius ?? 0;
+  
+    const decoration = `BoxDecoration(
+        color: Color(0xFF${bgColor}),
+        border: Border.all(
+          color: Color(0xFF${borderColor}),
+          width: ${borderWidth},
+        ),
+        borderRadius: BorderRadius.circular(${borderRadius}),
+      )`;
+  
+    let innerWidget = '';
+  
+    if (comp.type === 'IconButton') {
+      // Si es IconButton, lo envolvemos en un Container para respetar width/height/decoración.
+      const tooltip = comp.tooltip ?? '';
+      const icon = comp.icon ?? 'help_outline';
+      const route = comp.navigateTo ?? '/';
+  
+      innerWidget = `Container(
+          width: ${width},
+          height: ${height},
+          decoration: ${decoration},
+          child: IconButton(
+            tooltip: '${tooltip}',
+            icon: const Icon(Icons.${icon}),
+            onPressed: () {
+              Navigator.pushNamed(context, '${route}');
+            },
+          ),
+        )`;
+    } else {
+      // Para Container u otros widgets que usen BoxDecoration (por ejemplo, si comp.type === 'Container')
+      innerWidget = `Container(
+          width: ${width},
+          height: ${height},
+          decoration: ${decoration},
+        )`;
+    }
+  
+    // Si el propio comp tiene alignment, lo envuelvo en Align; de lo contrario, en Positioned.
+    if (comp.alignment) {
+      return `Align(
+          alignment: Alignment.${comp.alignment},
+          child: ${innerWidget},
+        )`;
+    } else {
+      const top = comp.top ?? 0;
+      const left = comp.left ?? 0;
+      return `Positioned(
+          top: ${top},
+          left: ${left},
+          child: ${innerWidget},
+        )`;
+    }
+  }
+  
+  
   generateFlutterCode(): string {
+    // 1) Tomo todos los componentes de la página (sin top/left globales)
     const components = this.getPantallaSinTopLeft();
-
-    const widgets = components
-      .map((comp) => {
-        // Si es IconButton
+  
+    // 2) Detecto si existe un AppBar en la lista
+    const appBarComp = components.find(c => c.type === 'AppBar');
+  
+    // 3) Si hay AppBar, construyo la sección appBar con su color y título
+    let appBarCode = '';
+    if (appBarComp) {
+      const bgColor = `Color(0xFF${appBarComp.decoration.color.replace('#', '')})`;
+  
+      // Busco el Text que esté dentro de appBarComp.children para extraer el título
+      const titleChild = (appBarComp.children ?? []).find(ch => ch.type === 'Text');
+      const titleText = titleChild ? titleChild.text : '';
+  
+      appBarCode = `
+        appBar: AppBar(
+          backgroundColor: ${bgColor},
+          title: Text('${titleText}'),
+          centerTitle: true,
+        ),`;
+    }
+  
+    // 4) Filtro la lista para obtener solo los widgets que irán en el Stack:
+    //    elimino AppBar y cualquier hijo de AppBar
+    const filtered = components.filter(c => {
+      if (c.type === 'AppBar') return false;
+      if (appBarComp && c.parentId === appBarComp.id) return false;
+      return true;
+    });
+  
+    // 5) Genero cada widget para el Stack
+    const widgets = filtered
+      .map(comp => {
+        // A) Primero extraigo únicamente los Text que estén dentro de comp.children
+        const textChildren = (comp.children ?? []).filter(ch => ch.type === 'Text');
+  
+        // B) Si NO hay hijos Text, delego completamente a generateFlutterWidget(comp)
+        if (textChildren.length === 0) {
+          return this.generateFlutterWidget(comp);
+        }
+  
+        // C) Si llegamos aquí, comp tiene al menos un hijo Text.
+        //    Debo reconstruir el “widget base” sin el wrapper Positioned/Align de generateFlutterWidget,
+        //    para luego insertar un Stack interno con cada Text en su posición/align correspondiente.
+  
+        // C.1) Extraigo ancho/alto y decoración del comp
+        const width = comp.width ?? 50;
+        const height = comp.height ?? 50;
+        const bgColor = comp.decoration?.color?.replace('#', '') ?? 'ffffff';
+        const borderColor = comp.decoration?.border?.color?.replace('#', '') ?? '000000';
+        const borderWidth = comp.decoration?.border?.width ?? 0;
+        const borderRadius = comp.decoration?.borderRadius ?? 0;
+  
+        const decoration = `BoxDecoration(
+          color: Color(0xFF${bgColor}),
+          border: Border.all(
+            color: Color(0xFF${borderColor}),
+            width: ${borderWidth},
+          ),
+          borderRadius: BorderRadius.circular(${borderRadius}),
+        )`;
+  
+        // C.2) Construyo el widget base que luego tendrá un Stack interno:
+        let baseWidget = '';
         if (comp.type === 'IconButton') {
+          // Si es IconButton, reproduzco el Container + IconButton
           const tooltip = comp.tooltip ?? '';
           const icon = comp.icon ?? 'help_outline';
           const route = comp.navigateTo ?? '/';
-
-          if (comp.alignment) {
-            return `Align(
-  alignment: Alignment.${comp.alignment},
-  child: IconButton(
-    tooltip: '${tooltip}',
-    icon: const Icon(Icons.${icon}),
-    onPressed: () {
-      Navigator.pushNamed(context, '${route}');
-    },
-  ),
-)`;
-          } else {
-            return `Positioned(
-  top: ${comp.top ?? 0},
-  left: ${comp.left ?? 0},
-  child: IconButton(
-    tooltip: '${tooltip}',
-    icon: const Icon(Icons.${icon}),
-    onPressed: () {
-      Navigator.pushNamed(context, '${route}');
-    },
-  ),
-)`;
-          }
-        }
-
-        // Si es Container
-        const container = `Container(
-  width: ${comp.width},
-  height: ${comp.height},
-  decoration: BoxDecoration(
-    color: Color(0xFF${comp.decoration.color.replace('#', '')}),
-    border: Border.all(
-      color: Color(0xFF${comp.decoration.border.color.replace('#', '')}),
-      width: ${comp.decoration.border.width}
-    ),
-    borderRadius: BorderRadius.circular(${comp.decoration.borderRadius}),
-  ),
-)`;
-
-        if (comp.alignment) {
-          return `Align(
-  alignment: Alignment.${comp.alignment},
-  child: ${container},
-)`;
+          baseWidget = `Container(
+            width: ${width},
+            height: ${height},
+            decoration: ${decoration},
+            child: IconButton(
+              tooltip: '${tooltip}',
+              icon: const Icon(Icons.${icon}),
+              onPressed: () {
+                Navigator.pushNamed(context, '${route}');
+              },
+            ),
+          )`;
         } else {
+          // Caso Container (u otro tipo que use BoxDecoration)
+          baseWidget = `Container(
+            width: ${width},
+            height: ${height},
+            decoration: ${decoration},
+          )`;
+        }
+  
+        // C.3) Dentro del Stack interno, genero cada Text respetando su propio estilo
+        //      (ancho, alto, color de fondo, borde, borderRadius) y luego centraré el texto
+        const innerStack = textChildren
+          .map(child => {
+            // Extraigo propiedades de estilo del texto
+            const tWidth = child.width ?? 50;
+            const tHeight = child.height ?? 20;
+            const tBgColor = child.decoration?.color?.replace('#', '') ?? 'ffffff';
+            const tBorderColor =
+              child.decoration?.border?.color?.replace('#', '') ?? '000000';
+            const tBorderWidth = child.decoration?.border?.width ?? 0;
+            const tBorderRadius = child.decoration?.borderRadius ?? 0;
+  
+            const tDecoration = `BoxDecoration(
+              color: Color(0xFF${tBgColor}),
+              border: Border.all(
+                color: Color(0xFF${tBorderColor}),
+                width: ${tBorderWidth},
+              ),
+              borderRadius: BorderRadius.circular(${tBorderRadius}),
+            )`;
+  
+            // Si el texto hijo tiene alignment, lo envuelvo en Align; si no, en Positioned:
+            if (child.alignment) {
+              return `Align(
+        alignment: Alignment.${child.alignment},
+        child: Container(
+          width: ${tWidth},
+          height: ${tHeight},
+          decoration: ${tDecoration},
+          child: Center(
+            child: Text(
+              '${child.text}',
+            ),
+          ),
+        ),
+      )`;
+            } else {
+              const top = child.top ?? 0;
+              const left = child.left ?? 0;
+              return `Positioned(
+        top: ${top},
+        left: ${left},
+        child: Container(
+          width: ${tWidth},
+          height: ${tHeight},
+          decoration: ${tDecoration},
+          child: Center(
+            child: Text(
+              '${child.text}',
+            ),
+          ),
+        ),
+      )`;
+            }
+          })
+          .join(',\n');
+  
+        // C.4) Finalmente, a todo el Container+Stack interno lo envuelvo en Align o Positioned
+        //      según que el propio comp tenga comp.alignment o no.
+        if (comp.alignment) {
+          // Si el padre define alignment, uso Align para todo el bloque.
+          return `Align(
+    alignment: Alignment.${comp.alignment},
+    child: Container(
+      width: ${width},
+      height: ${height},
+      decoration: ${decoration},
+      child: Stack(
+        children: [
+  ${innerStack
+    .split('\n')
+    .map(line => '        ' + line)
+    .join('\n')}
+        ],
+      ),
+    ),
+  )`;
+        } else {
+          // Si el padre no define alignment, uso Positioned en pantalla
+          const top = comp.top ?? 0;
+          const left = comp.left ?? 0;
           return `Positioned(
-  top: ${comp.top ?? 0},
-  left: ${comp.left ?? 0},
-  child: ${container},
-)`;
+    top: ${top},
+    left: ${left},
+    child: Container(
+      width: ${width},
+      height: ${height},
+      decoration: ${decoration},
+      child: Stack(
+        children: [
+  ${innerStack
+    .split('\n')
+    .map(line => '        ' + line)
+    .join('\n')}
+        ],
+      ),
+    ),
+  )`;
         }
       })
       .join(',\n\n');
-
+  
+    // 6) Ensamblamos el Scaffold completo
     return `@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    body: Stack(
-      children: [
-${widgets
-  .split('\n')
-  .map((line) => '        ' + line)
-  .join('\n')}
-      ],
-    ),
-  );
-}`;
+  Widget build(BuildContext context) {
+    return Scaffold(${appBarCode}
+      body: Stack(
+        children: [
+  ${widgets
+    .split('\n')
+    .map(line => '        ' + line)
+    .join('\n')}
+        ],
+      ),
+    );
+  }`;
   }
-
+  
+  
+  
+  
+  
+  
 
   downloadAngularProject() {
     const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;

@@ -33,6 +33,9 @@
     >
       ➕ Agregar IconButton
     </button>
+    
+    <button class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2" (click)="addAppBar()">AppBar</button>
+
     <button type="button" (click)="downloadAngularProject()"
     class=" border border-white hover:bg-gray-700 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center me-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800 dark:hover:bg-blue-500">
     <svg class="w-5 h-5 text-white dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
@@ -100,6 +103,28 @@
     >
   </aside>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <!-- Canvas central: simulación de pantalla móvil -->
   <main
     class="flex-1 flex justify-center items-center bg-white pt-20"
@@ -115,6 +140,8 @@
       [ngStyle]="{ width: '360px', height: '812px' }"
       (mousemove)="!isPreviewMode && onMouseMove($event)"
       (mouseup)="!isPreviewMode && onMouseUp($event)"
+      (contextmenu)="onRightClick($event, null)"
+
     >
       <!-- Renderizado recursivo -->
       <ng-container
@@ -137,12 +164,20 @@
         [style.top.px]="contextMenu.y"
         class="absolute bg-white border rounded shadow z-[1000] min-w-[180px]"
       >
+      <ng-container *ngIf="contextMenu.targetId; else pasteOnlyMenu">
         <button
           (click)="addChild(contextMenu.targetId!)"
           class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
         >
           ➕ Agregar hijo
         </button>
+        <button
+        (click)="addTextChild(contextMenu.targetId!)"
+        class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+      >
+        🔤 Agregar Text hijo
+      </button>
+
         <button
           (click)="
             copyComponent(
@@ -154,6 +189,7 @@
           "
           class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
         >
+        
           📄 Copiar
         </button>
         <button
@@ -182,12 +218,24 @@
         >
           🗑️ Eliminar
         </button>
+      </ng-container>
+
+      <ng-template #pasteOnlyMenu>
+        <button
+          (click)="pasteComponent(null)"
+          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          [disabled]="!copiedComponent"
+        >
+          📋 Pegar aquí
+        </button>
+      </ng-template>
       </div>
 
       <!-- Template recursivo -->
       <ng-template #renderComponent let-comp="comp">
         <div
-          class="absolute"
+        class=" absolute"
+      
           [ngClass]="{
             'cursor-move': !isPreviewMode,
             'ring-2 ring-blue-600':
@@ -201,13 +249,18 @@
               ? goToPantalla(comp.navigateTo)
               : null
           "
-          (contextmenu)="onRightClick($event, comp)"
+          (contextmenu)="onRightClick($event, comp); $event.stopPropagation();"
         >
-          <div
-            class="w-full h-full flex items-center justify-center text-xs text-gray-800"
-          >
-            {{ comp.type }}
+        <ng-container [ngSwitch]="comp.type">
+          <!-- Renderizar TEXT -->
+          <div *ngSwitchCase="'Text'" class="w-full h-full flex items-center justify-center text-sm text-gray-800">
+            {{ comp.text }}
           </div>
+        
+          <!-- Render genérico por defecto (otros tipos) -->
+          
+        </ng-container>
+        
 
           <!-- Render hijos recursivamente -->
           <ng-container *ngFor="let child of comp.children">
@@ -220,6 +273,19 @@
     </div>
   </main>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   <!-- Columna derecha: panel de configuración -->
   <aside
     *ngIf="!isPreviewMode"
@@ -227,7 +293,15 @@
   >
     <div *ngIf="selectedComponent" class="space-y-4">
       <h2 class="text-lg font-bold">Propiedades del Container</h2>
-
+      <div *ngIf="selectedComponent.type === 'Text'">
+        <label class="block text-sm font-semibold">Texto</label>
+        <input
+          type="text"
+          [value]="selectedComponent.text || ''"
+          (input)="updateProperty('text', getInputValue($event))"
+          class="w-full border p-1"
+        />
+      </div>
       <!-- Color -->
       <div>
         <label class="block text-sm font-semibold">Color</label>
@@ -406,6 +480,8 @@
             />
           </div>
         </div>
+
+        
       </div>
     </div>
   </aside>
