@@ -6,12 +6,19 @@
   >
     <button
       class="w-full bg-gray-800 text-white py-2 rounded hover:bg-gray-900 mb-4"
-      (click)="isPreviewMode = !isPreviewMode"
+      (click)="togglePreviewMode()"
     >
       👁️
       {{
         isPreviewMode ? "Salir de previsualización" : "Modo previsualización"
       }}
+    </button>
+
+    <button
+      class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-2"
+      (click)="cargarJsonEjemploLocal()"
+    >
+      📥 Cargar JSON de ejemplo
     </button>
 
     <!-- Botón Agregar Container -->
@@ -20,6 +27,18 @@
       (click)="addContainer()"
     >
       ➕ Agregar Container
+    </button>
+    <button
+      class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 mb-2"
+      (click)="addDropdownButton()"
+    >
+      ➕ Agregar Dropdown
+    </button>
+    <button
+      class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 mb-2"
+      (click)="addCheckbox()"
+    >
+      ➕ Agregar Checkbox
     </button>
     <button
       class="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 mb-4"
@@ -33,19 +52,39 @@
     >
       ➕ Agregar IconButton
     </button>
-    
-    <button class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2" (click)="addAppBar()">AppBar</button>
 
-    <button type="button" (click)="downloadAngularProject()"
-    class=" border border-white hover:bg-gray-700 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center me-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800 dark:hover:bg-blue-500">
-    <svg class="w-5 h-5 text-white dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-      width="24" height="24" fill="none" viewBox="0 0 24 24">
-      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M4 15v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2m-8 1V4m0 12-4-4m4 4 4-4" />
-    </svg>
+    <button
+      class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2"
+      (click)="addAppBar()"
+    >
+      AppBar
+    </button>
 
-    <span class="sr-only">Icon para descargar zip</span>
-  </button>
+    <button
+      type="button"
+      (click)="downloadAngularProject()"
+      class="border border-white hover:bg-gray-700 hover:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center me-2 dark:border-blue-500 dark:text-blue-500 dark:hover:text-white dark:focus:ring-blue-800 dark:hover:bg-blue-500"
+    >
+      <svg
+        class="w-5 h-5 text-white dark:text-white"
+        aria-hidden="true"
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 15v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2m-8 1V4m0 12-4-4m4 4 4-4"
+        />
+      </svg>
+
+      <span class="sr-only">Icon para descargar zip</span>
+    </button>
     <!-- Selector de pantallas -->
     <div class="mb-4">
       <label class="block text-sm font-semibold mb-2">Pantallas</label>
@@ -84,15 +123,15 @@
     <!-- JSON del canvas -->
     <h3 class="text-sm font-semibold mb-2">JSON Canvas</h3>
     <pre
-      class="flex-1 text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap"
+      class="flex-1 text-xs bg-white p-2 rounded max-h-60 whitespace-pre-wrap"
     >
-      <pre class="flex-1 text-xs bg-white p-2 rounded overflow-auto whitespace-pre-wrap">
+      <pre class="flex-1 text-xs bg-white p-2 over rounded whitespace-pre-wrap">
         {{ getPantallaSinTopLeft() | json }}
       </pre>
 
     </pre>
 
-    <h3 class="text-sm font-semibold mb-2 mt-4">
+    <!--  <h3 class="text-sm font-semibold mb-2 mt-4">
       JSON completo (todas las pantallas)
     </h3>
     <pre
@@ -100,30 +139,8 @@
     >
   {{ getJsonCompleto() }}
 </pre
-    >
+    > -->
   </aside>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   <!-- Canvas central: simulación de pantalla móvil -->
   <main
@@ -141,7 +158,6 @@
       (mousemove)="!isPreviewMode && onMouseMove($event)"
       (mouseup)="!isPreviewMode && onMouseUp($event)"
       (contextmenu)="onRightClick($event, null)"
-
     >
       <!-- Renderizado recursivo -->
       <ng-container
@@ -164,78 +180,84 @@
         [style.top.px]="contextMenu.y"
         class="absolute bg-white border rounded shadow z-[1000] min-w-[180px]"
       >
-      <ng-container *ngIf="contextMenu.targetId; else pasteOnlyMenu">
-        <button
-          (click)="addChild(contextMenu.targetId!)"
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-        >
-          ➕ Agregar hijo
-        </button>
-        <button
-        (click)="addTextChild(contextMenu.targetId!)"
-        class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-      >
-        🔤 Agregar Text hijo
-      </button>
+        <ng-container *ngIf="contextMenu.targetId; else pasteOnlyMenu">
+          <button
+            (click)="addChild(contextMenu.targetId!)"
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          >
+            ➕ Agregar hijo
+          </button>
+          <button
+            (click)="addTextChild(contextMenu.targetId!)"
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          >
+            🔤 Agregar Text hijo
+          </button>
 
-        <button
-          (click)="
-            copyComponent(
-              findComponentById(
-                pages[currentPantalla].components,
-                contextMenu.targetId!
-              )!
-            )
-          "
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-        >
-        
-          📄 Copiar
-        </button>
-        <button
-          (click)="
-            cutComponent(
-              findComponentById(
-                pages[currentPantalla].components,
-                contextMenu.targetId!
-              )!
-            )
-          "
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-        >
-          ✂️ Cortar
-        </button>
-        <button
-          (click)="pasteComponent(contextMenu.targetId!)"
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-          [disabled]="!copiedComponent"
-        >
-          📋 Pegar dentro
-        </button>
-        <button
-          (click)="removeComponent(contextMenu.targetId!)"
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600"
-        >
-          🗑️ Eliminar
-        </button>
-      </ng-container>
+          <button
+            (click)="
+              copyComponent(
+                findComponentById(
+                  pages[currentPantalla].components,
+                  contextMenu.targetId!
+                )!
+              )
+            "
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          >
+            📄 Copiar
+          </button>
+          <button
+            (click)="
+              cutComponent(
+                findComponentById(
+                  pages[currentPantalla].components,
+                  contextMenu.targetId!
+                )!
+              )
+            "
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+          >
+            ✂️ Cortar
+          </button>
+          <button
+            (click)="pasteComponent(contextMenu.targetId!)"
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+            [disabled]="!copiedComponent"
+          >
+            📋 Pegar dentro
+          </button>
+          <button
+            (click)="removeComponent(contextMenu.targetId!)"
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600"
+          >
+            🗑️ Eliminar
+          </button>
+        </ng-container>
 
-      <ng-template #pasteOnlyMenu>
-        <button
-          (click)="pasteComponent(null)"
-          class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-          [disabled]="!copiedComponent"
-        >
-          📋 Pegar aquí
-        </button>
-      </ng-template>
+        <ng-template #pasteOnlyMenu>
+          <button
+            (click)="pasteComponent(null)"
+            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+            [disabled]="!copiedComponent"
+          >
+            📋 Pegar aquí
+          </button>
+        </ng-template>
       </div>
+
+
+
+
+
+
+
+
 
       <!-- Template recursivo -->
       <ng-template #renderComponent let-comp="comp">
         <div
-        class=" absolute"
-      
+          class="absolute"
           [ngClass]="{
             'cursor-move': !isPreviewMode,
             'ring-2 ring-blue-600':
@@ -244,23 +266,152 @@
           [ngStyle]="getComponentStyle(comp)"
           (click)="!isPreviewMode && selectComponent(comp, $event)"
           (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-          (mouseup)="
+          (click)="
             isPreviewMode && comp.type === 'IconButton' && comp.navigateTo
               ? goToPantalla(comp.navigateTo)
               : null
           "
-          (contextmenu)="onRightClick($event, comp); $event.stopPropagation();"
+          (contextmenu)="onRightClick($event, comp); $event.stopPropagation()"
         >
-        <ng-container [ngSwitch]="comp.type">
-          <!-- Renderizar TEXT -->
-          <div *ngSwitchCase="'Text'" class="w-full h-full flex items-center justify-center text-sm text-gray-800">
-            {{ comp.text }}
-          </div>
-        
-          <!-- Render genérico por defecto (otros tipos) -->
-          
-        </ng-container>
-        
+          <ng-container [ngSwitch]="comp.type">
+            <!-- Renderizar TEXT -->
+
+            <div
+              *ngSwitchCase="'Text'"
+              class="w-full h-full flex items-start justify-center overflow-hidden"
+            >
+              <!-- Remover los estilos del span que sobrescriben getComponentStyle -->
+              <span
+                [ngStyle]="{
+                  'font-size.px': comp.fontSize ,
+                  color: comp.textColor || '#000000',
+                  'font-family': comp.fontFamily || 'inherit',
+                  'white-space': 'pre-wrap',
+                  'text-align': comp.textAlign || 'left',
+                  'line-height': '1.4',
+                  
+                }"
+                class="select-text"
+                (click)="selectComponent(comp, $event)"
+                (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
+              >{{comp.text}}</span>
+            </div>
+            <!------------------------------------------------------------- -->
+            <!-- NUEVO: Renderizar DropdownButton -->
+            <ng-container *ngSwitchCase="'DropdownButton'">
+              <!-- Modo PREVIEW: desplegable real -->
+
+              <ng-container *ngIf="isPreviewMode; else editDropdown">
+                <div class="w-full h-full relative">
+                  <select
+                    class="w-full h-full absolute inset-0"
+                    [ngStyle]="{
+                      'background-color': 'transparent',
+                      border: 'none',
+                      padding: '0 0.5rem',
+                      'font-size': '1rem',
+                      color: '#000',
+                      'z-index': '10'
+                    }"
+                    [(ngModel)]="comp.selectedOption"
+                    (ngModelChange)="onDropdownChange(comp, $event)"
+                    (mousedown)="$event.stopPropagation()"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <option *ngFor="let opt of comp.options" [value]="opt">
+                      {{ opt }}
+                    </option>
+                  </select>
+                </div>
+              </ng-container>
+
+              <!-- Modo EDICIÓN: sólo muestra texto, deja pasar clicks al padre -->
+              <ng-template #editDropdown>
+                <div
+                  class="w-full h-full flex items-center justify-center text-sm text-gray-800"
+                >
+                  {{ comp.selectedOption }}
+                </div>
+              </ng-template>
+            </ng-container>
+            <!------------------------------------------------------------- -->
+            <!-- Render genérico por defecto (otros tipos) -->
+            <!-- Agregar este caso dentro del ngSwitch en tu template renderComponent -->
+            <ng-container *ngSwitchCase="'Checkbox'">
+              <!-- Contenedor principal del checkbox - SIEMPRE TRANSPARENTE -->
+              <div
+                class="flex w-full h-full"
+                [ngClass]="{
+                  'flex-row items-center': comp.labelPosition === 'right',
+                  'flex-row-reverse items-center':
+                    comp.labelPosition === 'left',
+                  'flex-col items-center': comp.labelPosition === 'bottom',
+                  'flex-col-reverse items-center': comp.labelPosition === 'top'
+                }"
+                [ngStyle]="{
+      'gap.px': comp.labelGap || 8,
+      'background-color': 'transparent',
+      'min-width.px': comp.labelPosition === 'bottom' || comp.labelPosition === 'top' ? comp.checkSize || 24 : 'auto',
+      'min-height.px': comp.labelPosition === 'left' || comp.labelPosition === 'right' ? comp.checkSize || 24 : 'auto',
+      
+    }"
+              >
+                <!-- El checkbox visual -->
+                <div
+                  class="relative flex items-center justify-center cursor-pointer flex-shrink-0"
+                  [ngStyle]="{
+                    'width.px': comp.checkSize || 24,
+                    'height.px': comp.checkSize || 24,
+                    'background-color': '#ffffff',
+                    border:
+                      (comp.decoration?.border?.width || 1) +
+                      'px solid ' +
+                      (comp.decoration?.border?.color || '#000000'),
+                    'border-radius.px': comp.decoration?.borderRadius || 4
+                  }"
+                  (click)="
+                    isPreviewMode && simulateCheckboxClick(comp, $event);
+                    $event.stopPropagation()
+                  "
+                >
+                  <!-- El "tick" o check -->
+                  <div
+                    *ngIf="comp.checked"
+                    class="flex items-center justify-center pointer-events-none"
+                    [ngStyle]="{
+                      color: comp.checkColor || '#000000',
+                      'font-size.px': (comp.checkSize || 24) * 0.6,
+                      'font-weight': 'bold',
+                      'line-height': '1'
+                    }"
+                  >
+                    ✓
+                  </div>
+                </div>
+
+                <!-- La etiqueta/texto - USA LAS PROPIEDADES DE TEXTO -->
+                <div class="overflow-hidden h-full w-full">
+                  <div
+                    *ngIf="comp.text"
+                    class="w-full h-full flex "
+                    [ngStyle]="{
+                      'font-size.px': comp.fontSize || 14,
+                      color: comp.textColor || '#000000',
+                      'font-family': comp.fontFamily || 'inherit',
+                      'text-align': comp.textAlign || 'left'
+                    }"
+                    (click)="
+                      isPreviewMode && simulateCheckboxClick(comp, $event);
+                      $event.stopPropagation()
+                    "
+                  >
+                    {{ comp.text }}
+                  </div>
+                </div>
+                
+              </div>
+            </ng-container>
+          </ng-container>
 
           <!-- Render hijos recursivamente -->
           <ng-container *ngFor="let child of comp.children">
@@ -272,6 +423,13 @@
       </ng-template>
     </div>
   </main>
+
+
+
+
+
+
+
 
 
 
@@ -301,6 +459,62 @@
           (input)="updateProperty('text', getInputValue($event))"
           class="w-full border p-1"
         />
+        <!-- 👇 Nuevo: Tamaño de fuente -->
+        <div>
+          <label class="block text-sm font-semibold"
+            >Tamaño de texto (px)</label
+          >
+          <input
+            type="number"
+            [value]="selectedComponent.fontSize || 14"
+            (input)="updateProperty('fontSize', getInputNumberValue($event))"
+            class="w-full border p-1"
+            min="8"
+            max="100"
+          />
+        </div>
+
+        <!-- 👇 Nuevo: Color de texto -->
+        <div>
+          <label class="block text-sm font-semibold">Color de texto</label>
+          <input
+            type="color"
+            [value]="selectedComponent.textColor || '#000000'"
+            (input)="updateProperty('textColor', getInputValue($event))"
+            class="w-full h-8 p-0 border"
+          />
+        </div>
+
+        <!-- 👇 Nuevo: Tipo de letra (fontFamily) -->
+        <div>
+          <label class="block text-sm font-semibold">Tipo de letra</label>
+          <select
+            class="w-full border p-1"
+            [value]="selectedComponent.fontFamily || ''"
+            (change)="updateProperty('fontFamily', getInputValue($event))"
+          >
+            <option value="">– Sistema predeterminado –</option>
+            <option value="Arial">Arial</option>
+            <option value="'Times New Roman'">Times New Roman</option>
+            <option value="'Courier New'">Courier New</option>
+            <option value="'Roboto'">Roboto</option>
+          </select>
+        </div>
+
+        <!-- 👇 Nuevo: Sangría (padding-left) -->
+        <div>
+          <label class="block text-sm font-semibold">Alineación de texto</label>
+          <select
+            class="w-full border p-1"
+            [value]="selectedComponent.textAlign || 'left'"
+            (change)="updateProperty('textAlign', getInputValue($event))"
+          >
+            <option value="left">Izquierda</option>
+            <option value="center">Centro</option>
+            <option value="right">Derecha</option>
+            <option value="justify">Justificada</option>
+          </select>
+        </div>
       </div>
       <!-- Color -->
       <div>
@@ -480,29 +694,208 @@
             />
           </div>
         </div>
+      </div>
+      <!-- Solo si el tipo es DropdownButton -->
+      <div
+        *ngIf="selectedComponent.type === 'DropdownButton'"
+        class="space-y-2"
+      >
+        <h3 class="text-md font-semibold">Opciones del Dropdown</h3>
 
-        
+        <!-- Listado actual de opciones -->
+        <ul class="list-disc list-inside mb-2">
+          <li
+            *ngFor="
+              let opt of selectedComponent.options;
+              let i = index;
+              trackBy: trackByFn
+            "
+            class="flex items-center gap-2"
+          >
+            <input
+              type="text"
+              [value]="opt"
+              (input)="onDropdownOptionInput(i, $event)"
+              class="flex-1 border px-2 py-1 rounded"
+            />
+            <button
+              class="text-red-500 hover:text-red-700"
+              (click)="removeDropdownOption(opt)"
+              title="Eliminar opción"
+            >
+              ✖
+            </button>
+          </li>
+        </ul>
+
+        <!-- Input para agregar nueva opción -->
+        <div class="flex gap-2 items-center">
+          <input
+            type="text"
+            [(ngModel)]="dropdownNewOption"
+            placeholder="Nueva opción"
+            class="flex-1 border p-1 rounded"
+          />
+          <button
+            class="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+            (click)="addDropdownOption()"
+          >
+            ➕
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-4">
+        <h2 class="text-lg font-bold">Propiedades del Checkbox</h2>
+
+        <!-- 1) Marcado (checked) -->
+        <div class="flex items-center space-x-2">
+          <label class="block text-sm font-semibold">Marcado</label>
+          <input
+            type="checkbox"
+            [checked]="selectedComponent.checked"
+            (change)="updateProperty('checked', $any($event.target).checked)"
+          />
+        </div>
+
+        <!-- 2) Color del "tick" (checkColor) -->
+        <div>
+          <label class="block text-sm font-semibold">Color del check</label>
+          <input
+            type="color"
+            [value]="selectedComponent.checkColor || '#000000'"
+            (input)="updateProperty('checkColor', $any($event.target).value)"
+            class="w-full h-8 p-0 border"
+          />
+        </div>
+
+        <!-- 3) Tamaño del cuadrado (checkSize) -->
+        <div>
+          <label class="block text-sm font-semibold"
+            >Tamaño del check (px)</label
+          >
+          <input
+            type="number"
+            [value]="selectedComponent.checkSize || 24"
+            (input)="updateProperty('checkSize', +$any($event.target).value)"
+            class="w-full border p-1"
+          />
+        </div>
+
+        <!-- 4) Texto/Etiqueta que acompaña al checkbox -->
+        <div>
+          <label class="block text-sm font-semibold">Etiqueta (texto)</label>
+          <input
+            type="text"
+            [value]="selectedComponent.text || ''"
+            (input)="updateProperty('text', $any($event.target).value)"
+            class="w-full border p-1"
+          />
+        </div>
+
+        <!-- 5) Propiedades de texto - NUEVAS -->
+        <div>
+          <label class="block text-sm font-semibold"
+            >Tamaño de texto (px)</label
+          >
+          <input
+            type="number"
+            [value]="selectedComponent.fontSize || 14"
+            (input)="updateProperty('fontSize', getInputNumberValue($event))"
+            class="w-full border p-1"
+            min="8"
+            max="100"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Color de texto</label>
+          <input
+            type="color"
+            [value]="selectedComponent.textColor || '#000000'"
+            (input)="updateProperty('textColor', getInputValue($event))"
+            class="w-full h-8 p-0 border"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Tipo de letra</label>
+          <select
+            class="w-full border p-1"
+            [value]="selectedComponent.fontFamily || ''"
+            (change)="updateProperty('fontFamily', getInputValue($event))"
+          >
+            <option value="">– Sistema predeterminado –</option>
+            <option value="Arial">Arial</option>
+            <option value="'Times New Roman'">Times New Roman</option>
+            <option value="'Courier New'">Courier New</option>
+            <option value="'Roboto'">Roboto</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold">Alineación de texto</label>
+          <select
+            class="w-full border p-1"
+            [value]="selectedComponent.textAlign || 'left'"
+            (change)="updateProperty('textAlign', getInputValue($event))"
+          >
+            <option value="left">Izquierda</option>
+            <option value="center">Centro</option>
+            <option value="right">Derecha</option>
+            <option value="justify">Justificada</option>
+          </select>
+        </div>
+
+        <!-- 6) Posición de la etiqueta (labelPosition) -->
+        <div>
+          <label class="block text-sm font-semibold"
+            >Posición de la etiqueta</label
+          >
+          <select
+            class="w-full border p-1"
+            [value]="selectedComponent.labelPosition || 'right'"
+            (change)="
+              updateProperty('labelPosition', $any($event.target).value)
+            "
+          >
+            <option value="left">Izquierda</option>
+            <option value="right">Derecha</option>
+            <option value="top">Arriba</option>
+            <option value="bottom">Abajo</option>
+          </select>
+        </div>
+
+        <!-- 7) Espacio entre checkbox y etiqueta (labelGap) -->
+        <div>
+          <label class="block text-sm font-semibold"
+            >Espacio etiqueta (px)</label
+          >
+          <input
+            type="number"
+            [value]="selectedComponent.labelGap || 4"
+            (input)="updateProperty('labelGap', +$any($event.target).value)"
+            class="w-full border p-1"
+          />
+        </div>
+
+        <!-- 8) Acción onChange (onChangeAction) -->
+        <div>
+          <label class="block text-sm font-semibold">onChangeAction</label>
+          <input
+            type="text"
+            [value]="selectedComponent.onChangeAction || ''"
+            (input)="
+              updateProperty('onChangeAction', $any($event.target).value)
+            "
+            placeholder="nombreDeLaFuncion"
+            class="w-full border p-1"
+          />
+          <small class="text-xs text-gray-500">
+            Nombre de la función a ejecutar al cambiar
+          </small>
+        </div>
       </div>
     </div>
   </aside>
-</div>
-
-<div
-  *ngIf="isModalFlutterCodeOpen"
-  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
->
-  <div
-    class="bg-white w-[90%] max-w-4xl max-h-[90%] overflow-auto rounded-lg shadow-lg p-4 relative"
-  >
-    <button
-      class="absolute top-2 right-2 text-gray-700 hover:text-black text-xl"
-      (click)="isModalFlutterCodeOpen = false"
-    >
-      &times;
-    </button>
-    <h2 class="text-lg font-bold mb-2">Código Flutter generado</h2>
-    <pre class="text-xs bg-gray-100 p-2 rounded whitespace-pre-wrap"
-      >{{ generateFlutterCode() }}
-    </pre>
-  </div>
 </div>

@@ -38,7 +38,7 @@ interface CanvasComponent {
     color: string;
     border: {
       color: string;
-      width: number;
+      width?: number;
     };
     borderRadius: number;
   };
@@ -67,6 +67,23 @@ interface CanvasComponent {
 
   children: CanvasComponent[];
   parentId: string | null;
+  selectedOption?: string;     // Opción actualmente seleccionada (para preview)
+
+  fontSize?: number;
+  textColor?: string;   // Nueva propiedad para color de texto
+  autoSize?: boolean;   // Control para ajuste automático
+
+  fontFamily?: string;
+  textIndent?: number;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+
+   // Nuevas propiedades para checkbox:
+   checked?: boolean;
+   checkColor?: string;         // Color del check (✓)
+   labelPosition?: "left" | "right" | "top" | "bottom";
+   labelGap?: number;          // Espacio entre checkbox y texto
+   checkSize?: number;         // Tamaño interno del check (✓)
+   onChangeAction?: string;    // Nombre de la función a ejecutar al cambiar
 }
 
 interface ContextMenu {
@@ -291,6 +308,29 @@ export class RoomsComponent implements OnInit {
 
     return JSON.stringify(pantallasLimpias, null, 2);
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   //agregar Page
   addPage(): void {
     const newPage: Page = {
@@ -303,11 +343,28 @@ export class RoomsComponent implements OnInit {
       this.sokectService.addPage(this.roomCode, newPage);
     }
   }
-
+  togglePreviewMode(): void {
+    if (!this.isPreviewMode) {
+      // Estoy a punto de entrar a PREVIEW: forzo que previewPantallaIndex === currentPantalla
+      this.previewPantallaIndex = this.currentPantalla;
+    } else {
+      // Al salir de PREVIEW, sincronizo currentPantalla con previewPantallaIndex
+      this.currentPantalla = this.previewPantallaIndex;
+    }
+    this.isPreviewMode = !this.isPreviewMode;
+    this.cdr.detectChanges(); // Aseguramos que los cambios se reflejen correctamente
+  }
   changePantalla(index: number): void {
     this.currentPantalla = index;
     this.selectedComponent = null;
+  
+    // Sincronizar siempre el índice de previsualización
+    if (this.isPreviewMode) {
+      this.previewPantallaIndex = index;
+    }
+    this.cdr.detectChanges();
   }
+  
 
   removePage(pageId: string): void {
     if (!this.roomCode) return;
@@ -323,6 +380,75 @@ export class RoomsComponent implements OnInit {
     this.sokectService.removePage(this.roomCode, pageId);
     this.cdr.detectChanges();
   }
+
+  addDropdownButton(): void {
+    const newDropdown: CanvasComponent = {
+      id: uuidv4(),
+      type: 'DropdownButton',
+      top: 50,
+      left: 50,
+      width: 120,       // ancho inicial; puedes ajustar
+      height: 40,       // alto inicial
+      decoration: {
+        color: '#ffffff',
+        border: { color: '#000000', width: 1 },
+        borderRadius: 4,
+      },
+      options: ['Opción 1', 'Opción 2'], // dos opciones por defecto
+      selectedOption: 'Opción 1',         // selecciona la primera por defecto
+      children: [],
+      parentId: null,
+    };
+  
+    const pageId = this.pages[this.currentPantalla].id;
+    this.sokectService.addCanvasComponent(this.roomCode, pageId, newDropdown);
+  }
+  //checkbox
+  addCheckbox(): void {
+    const defaultCheckSize = 24;
+    const defaultLabelGap = 8;
+    const estimatedTextWidth = 60; // Ancho estimado para "Etiqueta"
+    
+    const newCheckbox: CanvasComponent = {
+      id: uuidv4(),
+      type: 'Checkbox',
+      top: 50,
+      left: 50,
+      // Ajustar dimensiones según la posición de la etiqueta
+      width: defaultCheckSize + defaultLabelGap + estimatedTextWidth,  // Ancho para checkbox + gap + texto
+      height: defaultCheckSize,  // Alto del checkbox
+      decoration: {
+        color: 'transparent',  // CONTENEDOR SIEMPRE TRANSPARENTE
+        border: { color: 'transparent', width: 0 },  // Sin borde en el contenedor
+        borderRadius: 0,
+      },
+      // Propiedades específicas del checkbox:
+      checked: false,
+      checkColor: '#000000',
+      labelPosition: 'right',
+      labelGap: defaultLabelGap,
+      checkSize: defaultCheckSize,
+      onChangeAction: '',
+      text: 'Etiqueta',
+      // Propiedades de texto (como en Text component)
+      fontSize: 14,
+      textColor: '#000000',
+      fontFamily: 'inherit',
+      textAlign: 'left',
+      // Resto de propiedades comunes:
+      children: [],
+      parentId: null,
+    };
+  
+    const pageId = this.pages[this.currentPantalla].id;
+    this.sokectService.addCanvasComponent(
+      this.roomCode,
+      pageId,
+      newCheckbox
+    );
+  }
+
+  ///appbar
   addAppBar(): void {
     const newAppBar: CanvasComponent = {
       id: uuidv4(),
@@ -368,14 +494,24 @@ export class RoomsComponent implements OnInit {
     this.sokectService.addCanvasComponent(this.roomCode, pageId, newContainer);
   }
   addTextChild(parentId: string): void {
+    const page =
+      this.pages[
+        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+      ];
+  
+    const parent = this.findComponentById(page.components, parentId);
+    const padding = 0;
+  
     const child: CanvasComponent = {
       id: uuidv4(),
       type: 'Text',
       text: 'Título',
-      width: 100,
+      fontSize: 16,
+      autoSize: true,
+      width: (parent?.width ?? 100) - padding * 2,
       height: 30,
-      top: 10,
-      left: 10,
+      top: padding,
+      left: padding,
       decoration: {
         color: 'transparent',
         border: { color: '#000000', width: 0 },
@@ -384,20 +520,11 @@ export class RoomsComponent implements OnInit {
       children: [],
       parentId,
     };
-
-    const pageId =
-      this.pages[
-        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
-      ].id;
-
-    this.sokectService.addChildComponent(
-      this.roomCode,
-      parentId,
-      child,
-      pageId
-    );
+  
+    this.sokectService.addChildComponent(this.roomCode, parentId, child, page.id);
     this.contextMenu.visible = false;
   }
+  
 
   addIconButton(): void {
     const newIconButton: CanvasComponent = {
@@ -429,10 +556,13 @@ export class RoomsComponent implements OnInit {
   goToPantalla(ruta: string): void {
     const nombreRuta = ruta.replace('/', '');
     const index = this.pages.findIndex(
-      (p) => p.name.toLowerCase().replace(/ /g, '') === nombreRuta
+      p => p.name.toLowerCase().replace(/ /g, '') === nombreRuta
     );
+    
     if (index !== -1) {
       this.previewPantallaIndex = index;
+      this.currentPantalla = index; // Sincronizar ambos índices
+      this.cdr.detectChanges();
     }
   }
   //metodo par salir del modo previsualizacion con la tecla escape
@@ -444,39 +574,34 @@ export class RoomsComponent implements OnInit {
 
   //fin
 
-  //para el panel derecho encargado de actualizar las propiedades de un widget
 
-  updateProperty(key: string, value: any): void {
-    if (!this.selectedComponent || !this.roomCode) return;
 
-    const pageId = this.pages[this.currentPantalla].id;
-    const componentId = this.selectedComponent.id;
 
-    const updates: any = {};
-    updates[key] = value;
 
-    this.sokectService.updateComponentProperties(
-      this.roomCode,
-      pageId,
-      componentId,
-      updates
-    );
-  }
 
-  getEventValue(event: Event): string {
-    const target = event.target as HTMLInputElement | null;
-    return target?.value || '';
-  }
-  getInputValue(event: Event): string {
-    return (event.target as HTMLInputElement)?.value || '';
-  }
 
-  getInputNumberValue(event: Event): number {
-    const value = (event.target as HTMLInputElement)?.value;
-    return value !== undefined ? +value : 0;
-  }
 
-  //fin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   //para el drag and drop o movimiento
   onMouseDown(event: MouseEvent, component: CanvasComponent): void {
@@ -503,35 +628,7 @@ export class RoomsComponent implements OnInit {
 
     this.cdr.detectChanges();
   }
-  /*  onMouseMove(event: MouseEvent): void {
-    if (!this.dragState.isDragging || !this.dragState.component) return;
-
-    const comp = this.dragState.component;
-
-    // Solo mover si no tiene alignment
-    if (!comp.alignment) {
-      const deltaX = event.clientX - this.dragState.startX;
-      const deltaY = event.clientY - this.dragState.startY;
-
-      comp.left = this.dragState.initialLeft + deltaX;
-      comp.top = this.dragState.initialTop + deltaY;
-
-      // Emitir al socket en tiempo real
-      this.SokectSevice.moveComponent(
-        this.roomCode,
-        this.currentPageId,
-        comp.id,
-        {
-          left: comp.left,
-          top: comp.top,
-          userId: this.currentUserId,
-        }
-      );
-
-      this.cdr.detectChanges();
-    }
-  } */
-
+  
   get currentPageId(): string {
     return this.pages[this.currentPantalla]?.id || '';
   }
@@ -557,7 +654,6 @@ export class RoomsComponent implements OnInit {
       this.dragState.component = null;
     }
   }
-
   //metodo par seleccionar un widget
   selectComponent(comp: CanvasComponent, event: MouseEvent): void {
     event.stopPropagation(); // evita que un hijo sobreescriba la selección del padre
@@ -747,6 +843,15 @@ export class RoomsComponent implements OnInit {
   }
 
   //fin
+
+
+
+
+
+
+
+
+  //para el panel de previsualizacion
   getComponentStyle(comp: CanvasComponent): any {
     const style: any = {
       width: comp.width + 'px',
@@ -757,17 +862,36 @@ export class RoomsComponent implements OnInit {
       position: 'absolute',
     };
 
+    // Estilos específicos para componentes de texto
+    if (comp.type === 'Text') {
+      style.fontSize = (comp.fontSize ) + 'px';
+      style.color = comp.textColor || '#000000';
+    //  style.overflow = 'hidden'; // Evita que el texto se desborde
+     style.textOverflow = 'ellipsis'; // Añade puntos suspensivos si es necesario
+    // style.whiteSpace = 'nowrap'; // Para texto en una línea
+      style.display = 'flex';
+      style.alignItems = 'center'; // Centra verticalmente
+     // style.padding_bottom = '20px'; // Añade un pequeño padding interno
+      style.boxSizing = 'border-box'; // Incluye padding en las dimensiones
+    
+      // Si quieres permitir múltiples líneas, usa esto en lugar de whiteSpace: 'nowrap'
+      // style.whiteSpace = 'normal';
+      // style.wordWrap = 'break-word';
+      style.overflowWrap = 'break-word';
+    }
+
+    const pageIndex = this.isPreviewMode
+      ? this.previewPantallaIndex
+      : this.currentPantalla;
+    const currentPage = this.pages[pageIndex];
+    
     // Buscar padre si el componente es hijo
     const parent = comp.parentId
-      ? this.findComponentById(
-          this.pages[this.currentPantalla].components,
-          comp.parentId
-        )
+      ? this.findComponentById(currentPage.components, comp.parentId)
       : null;
-
     const parentWidth = parent?.width || 360;
     const parentHeight = parent?.height || 812;
-
+   
     if (!comp.alignment) {
       style.top = (comp.top ?? 0) + 'px';
       style.left = (comp.left ?? 0) + 'px';
@@ -779,7 +903,6 @@ export class RoomsComponent implements OnInit {
       center: (parentWidth - comp.width) / 2,
       right: parentWidth - comp.width,
     };
-
     const y = {
       top: 0,
       center: (parentHeight - comp.height) / 2,
@@ -799,11 +922,23 @@ export class RoomsComponent implements OnInit {
     };
 
     const pos = alignmentMap[comp.alignment];
-    style.top = pos.top + 'px';
-    style.left = pos.left + 'px';
+let left = pos.left;
+let top  = pos.top;
 
-    return style;
-  }
+// Clamp horizontal
+const maxLeft = parentWidth  - comp.width;
+if (left  < 0)       left = 0;
+if (left  > maxLeft) left = maxLeft;
+
+// Clamp vertical
+const maxTop = parentHeight - comp.height;
+if (top   < 0)     top = 0;
+if (top   > maxTop) top = maxTop;
+
+style.left = left + 'px';
+style.top  = top  + 'px';
+return style;
+}
 
   getPantallaSinTopLeft(): CanvasComponent[] {
     return this.pages[this.currentPantalla].components.map((comp) => {
@@ -817,6 +952,114 @@ export class RoomsComponent implements OnInit {
       return clone;
     });
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  //para el panel derecho encargado de actualizar las propiedades de un widget
+
+  updateProperty(key: string, value: any): void {
+    if (!this.selectedComponent || !this.roomCode) return;
+    const pageId = this.pages[this.currentPantalla].id;
+    const componentId = this.selectedComponent.id;
+  
+    // 1) Actualiza localmente para que la vista inmediata refleje ese cambio
+    (this.selectedComponent as any)[key] = value;
+  
+    // 2) Luego envía al backend
+    const updates: any = {};
+    updates[key] = value;
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      pageId,
+      componentId,
+      updates
+    );
+  }
+  
+
+  getEventValue(event: Event): string {
+    const target = event.target as HTMLInputElement | null;
+    return target?.value || '';
+  }
+  getInputValue(event: Event): string {
+    return (event.target as HTMLInputElement)?.value || '';
+  }
+
+  getInputNumberValue(event: Event): number {
+    const value = (event.target as HTMLInputElement)?.value;
+    return value !== undefined ? +value : 0;
+  }
+  //DropdownButton
+  dropdownNewOption: string = '';
+  onDropdownChange(comp: CanvasComponent, newValue: string) {
+    comp.selectedOption = newValue;
+    // Si quieres persistir este cambio en el servidor, descomenta la línea siguiente:
+    this.updateProperty('selectedOption', newValue);
+  }
+  addDropdownOption() {
+    if (!this.selectedComponent || this.selectedComponent.type !== 'DropdownButton')
+      return;
+  
+    const opts = this.selectedComponent.options || [];
+    if (this.dropdownNewOption.trim()) {
+      opts.push(this.dropdownNewOption.trim());
+      // Enviamos el arreglo completo de opciones actualizado
+      this.updateProperty('options', opts);
+      // Limpiamos el input
+      this.dropdownNewOption = '';
+    }
+  }
+  
+  removeDropdownOption(optToRemove: string) {
+    if (!this.selectedComponent || this.selectedComponent.type !== 'DropdownButton')
+      return;
+  
+    const opts = (this.selectedComponent.options || []).filter((o) => o !== optToRemove);
+    this.updateProperty('options', opts);
+  }
+  onDropdownOptionInput(index: number, event: Event) {
+    const inputValue = (event.target as HTMLInputElement).value;
+  
+    if (
+      !this.selectedComponent ||
+      this.selectedComponent.type !== 'DropdownButton' ||
+      !Array.isArray(this.selectedComponent.options)
+    ) {
+      return;
+    }
+  
+    // Modificamos el array existente en lugar de crear uno nuevo
+    this.selectedComponent.options[index] = inputValue;
+  
+    // Actualizamos usando el método existente
+    const updates = { options: this.selectedComponent.options };
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      this.pages[this.currentPantalla].id,
+      this.selectedComponent.id,
+      updates
+    );
+  }
+  trackByFn(index: number, item: any): any {
+    return index; // O usa un ID único si tienes
+  }
+
+  //fin
+
   handleNavigateToChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
     if (!this.selectedComponent) return;
@@ -832,291 +1075,270 @@ export class RoomsComponent implements OnInit {
     return '/' + nombre.toLowerCase().replace(/ /g, '');
   }
 
-  private generateFlutterWidget(comp: any): string {
-    // Extrae ancho, alto y decoración básica de cualquier widget Container/IconButton
-    const width = comp.width ?? 50;
-    const height = comp.height ?? 50;
-    const bgColor = comp.decoration?.color?.replace('#', '') ?? 'ffffff';
-    const borderColor =
-      comp.decoration?.border?.color?.replace('#', '') ?? '000000';
-    const borderWidth = comp.decoration?.border?.width ?? 0;
-    const borderRadius = comp.decoration?.borderRadius ?? 0;
-  
-    const decoration = `BoxDecoration(
-        color: Color(0xFF${bgColor}),
-        border: Border.all(
-          color: Color(0xFF${borderColor}),
-          width: ${borderWidth},
-        ),
-        borderRadius: BorderRadius.circular(${borderRadius}),
-      )`;
-  
-    let innerWidget = '';
-  
-    if (comp.type === 'IconButton') {
-      // Si es IconButton, lo envolvemos en un Container para respetar width/height/decoración.
-      const tooltip = comp.tooltip ?? '';
-      const icon = comp.icon ?? 'help_outline';
-      const route = comp.navigateTo ?? '/';
-  
-      innerWidget = `Container(
-          width: ${width},
-          height: ${height},
-          decoration: ${decoration},
-          child: IconButton(
-            tooltip: '${tooltip}',
-            icon: const Icon(Icons.${icon}),
-            onPressed: () {
-              Navigator.pushNamed(context, '${route}');
-            },
-          ),
-        )`;
-    } else {
-      // Para Container u otros widgets que usen BoxDecoration (por ejemplo, si comp.type === 'Container')
-      innerWidget = `Container(
-          width: ${width},
-          height: ${height},
-          decoration: ${decoration},
-        )`;
-    }
-  
-    // Si el propio comp tiene alignment, lo envuelvo en Align; de lo contrario, en Positioned.
-    if (comp.alignment) {
-      return `Align(
-          alignment: Alignment.${comp.alignment},
-          child: ${innerWidget},
-        )`;
-    } else {
-      const top = comp.top ?? 0;
-      const left = comp.left ?? 0;
-      return `Positioned(
-          top: ${top},
-          left: ${left},
-          child: ${innerWidget},
-        )`;
-    }
-  }
-  
-  
-  generateFlutterCode(): string {
-    // 1) Tomo todos los componentes de la página (sin top/left globales)
-    const components = this.getPantallaSinTopLeft();
-  
-    // 2) Detecto si existe un AppBar en la lista
-    const appBarComp = components.find(c => c.type === 'AppBar');
-  
-    // 3) Si hay AppBar, construyo la sección appBar con su color y título
-    let appBarCode = '';
-    if (appBarComp) {
-      const bgColor = `Color(0xFF${appBarComp.decoration.color.replace('#', '')})`;
-  
-      // Busco el Text que esté dentro de appBarComp.children para extraer el título
-      const titleChild = (appBarComp.children ?? []).find(ch => ch.type === 'Text');
-      const titleText = titleChild ? titleChild.text : '';
-  
-      appBarCode = `
-        appBar: AppBar(
-          backgroundColor: ${bgColor},
-          title: Text('${titleText}'),
-          centerTitle: true,
-        ),`;
-    }
-  
-    // 4) Filtro la lista para obtener solo los widgets que irán en el Stack:
-    //    elimino AppBar y cualquier hijo de AppBar
-    const filtered = components.filter(c => {
-      if (c.type === 'AppBar') return false;
-      if (appBarComp && c.parentId === appBarComp.id) return false;
-      return true;
-    });
-  
-    // 5) Genero cada widget para el Stack
-    const widgets = filtered
-      .map(comp => {
-        // A) Primero extraigo únicamente los Text que estén dentro de comp.children
-        const textChildren = (comp.children ?? []).filter(ch => ch.type === 'Text');
-  
-        // B) Si NO hay hijos Text, delego completamente a generateFlutterWidget(comp)
-        if (textChildren.length === 0) {
-          return this.generateFlutterWidget(comp);
-        }
-  
-        // C) Si llegamos aquí, comp tiene al menos un hijo Text.
-        //    Debo reconstruir el “widget base” sin el wrapper Positioned/Align de generateFlutterWidget,
-        //    para luego insertar un Stack interno con cada Text en su posición/align correspondiente.
-  
-        // C.1) Extraigo ancho/alto y decoración del comp
-        const width = comp.width ?? 50;
-        const height = comp.height ?? 50;
-        const bgColor = comp.decoration?.color?.replace('#', '') ?? 'ffffff';
-        const borderColor = comp.decoration?.border?.color?.replace('#', '') ?? '000000';
-        const borderWidth = comp.decoration?.border?.width ?? 0;
-        const borderRadius = comp.decoration?.borderRadius ?? 0;
-  
-        const decoration = `BoxDecoration(
-          color: Color(0xFF${bgColor}),
-          border: Border.all(
-            color: Color(0xFF${borderColor}),
-            width: ${borderWidth},
-          ),
-          borderRadius: BorderRadius.circular(${borderRadius}),
-        )`;
-  
-        // C.2) Construyo el widget base que luego tendrá un Stack interno:
-        let baseWidget = '';
-        if (comp.type === 'IconButton') {
-          // Si es IconButton, reproduzco el Container + IconButton
-          const tooltip = comp.tooltip ?? '';
-          const icon = comp.icon ?? 'help_outline';
-          const route = comp.navigateTo ?? '/';
-          baseWidget = `Container(
-            width: ${width},
-            height: ${height},
-            decoration: ${decoration},
-            child: IconButton(
-              tooltip: '${tooltip}',
-              icon: const Icon(Icons.${icon}),
-              onPressed: () {
-                Navigator.pushNamed(context, '${route}');
-              },
-            ),
-          )`;
-        } else {
-          // Caso Container (u otro tipo que use BoxDecoration)
-          baseWidget = `Container(
-            width: ${width},
-            height: ${height},
-            decoration: ${decoration},
-          )`;
-        }
-  
-        // C.3) Dentro del Stack interno, genero cada Text respetando su propio estilo
-        //      (ancho, alto, color de fondo, borde, borderRadius) y luego centraré el texto
-        const innerStack = textChildren
-          .map(child => {
-            // Extraigo propiedades de estilo del texto
-            const tWidth = child.width ?? 50;
-            const tHeight = child.height ?? 20;
-            const tBgColor = child.decoration?.color?.replace('#', '') ?? 'ffffff';
-            const tBorderColor =
-              child.decoration?.border?.color?.replace('#', '') ?? '000000';
-            const tBorderWidth = child.decoration?.border?.width ?? 0;
-            const tBorderRadius = child.decoration?.borderRadius ?? 0;
-  
-            const tDecoration = `BoxDecoration(
-              color: Color(0xFF${tBgColor}),
-              border: Border.all(
-                color: Color(0xFF${tBorderColor}),
-                width: ${tBorderWidth},
-              ),
-              borderRadius: BorderRadius.circular(${tBorderRadius}),
-            )`;
-  
-            // Si el texto hijo tiene alignment, lo envuelvo en Align; si no, en Positioned:
-            if (child.alignment) {
-              return `Align(
-        alignment: Alignment.${child.alignment},
-        child: Container(
-          width: ${tWidth},
-          height: ${tHeight},
-          decoration: ${tDecoration},
-          child: Center(
-            child: Text(
-              '${child.text}',
-            ),
-          ),
-        ),
-      )`;
-            } else {
-              const top = child.top ?? 0;
-              const left = child.left ?? 0;
-              return `Positioned(
-        top: ${top},
-        left: ${left},
-        child: Container(
-          width: ${tWidth},
-          height: ${tHeight},
-          decoration: ${tDecoration},
-          child: Center(
-            child: Text(
-              '${child.text}',
-            ),
-          ),
-        ),
-      )`;
-            }
-          })
-          .join(',\n');
-  
-        // C.4) Finalmente, a todo el Container+Stack interno lo envuelvo en Align o Positioned
-        //      según que el propio comp tenga comp.alignment o no.
-        if (comp.alignment) {
-          // Si el padre define alignment, uso Align para todo el bloque.
-          return `Align(
-    alignment: Alignment.${comp.alignment},
-    child: Container(
-      width: ${width},
-      height: ${height},
-      decoration: ${decoration},
-      child: Stack(
-        children: [
-  ${innerStack
-    .split('\n')
-    .map(line => '        ' + line)
-    .join('\n')}
-        ],
-      ),
-    ),
-  )`;
-        } else {
-          // Si el padre no define alignment, uso Positioned en pantalla
-          const top = comp.top ?? 0;
-          const left = comp.left ?? 0;
-          return `Positioned(
-    top: ${top},
-    left: ${left},
-    child: Container(
-      width: ${width},
-      height: ${height},
-      decoration: ${decoration},
-      child: Stack(
-        children: [
-  ${innerStack
-    .split('\n')
-    .map(line => '        ' + line)
-    .join('\n')}
-        ],
-      ),
-    ),
-  )`;
-        }
-      })
-      .join(',\n\n');
-  
-    // 6) Ensamblamos el Scaffold completo
-    return `@override
-  Widget build(BuildContext context) {
-    return Scaffold(${appBarCode}
-      body: Stack(
-        children: [
-  ${widgets
-    .split('\n')
-    .map(line => '        ' + line)
-    .join('\n')}
-        ],
-      ),
+  onCheckboxToggle(comp: CanvasComponent, event: Event) {
+    // Obtiene si está chequeado o no
+    const newChecked = (event.target as HTMLInputElement).checked;
+    // Actualiza localmente (para que el cambio se vea al vuelo)
+    comp.checked = newChecked;
+
+    // Envía la actualización al servidor para sincronizar con otros usuarios
+    const updates: any = { checked: newChecked };
+
+    const pageId = this.pages[this.currentPantalla].id;
+    const componentId = comp.id;
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      pageId,
+      componentId,
+      updates
     );
-  }`;
+  }
+
+
+  simulateCheckboxClick(comp: CanvasComponent, event: MouseEvent): void {
+    if (!this.isPreviewMode) return;
+    
+    // Crear un evento sintético para simular el cambio del checkbox
+    const syntheticEvent = {
+      target: {
+        checked: !comp.checked
+      } as HTMLInputElement
+    } as unknown as Event;
+    
+    // Usar tu método existente
+    this.onCheckboxToggle(comp, syntheticEvent);
+    
+    // Si hay una acción definida, ejecutarla
+    if (comp.onChangeAction && comp.onChangeAction.trim()) {
+      this.executeCheckboxAction(comp, !comp.checked);
+    }
   }
   
-  
-  
-  
-  
-  
+  private executeCheckboxAction(comp: CanvasComponent, newCheckedState: boolean): void {
+    const actionName = comp.onChangeAction;
+    if (!actionName) return;
+    
+    console.log(`Ejecutando acción: ${actionName} - Checkbox ${newCheckedState ? 'marcado' : 'desmarcado'}`);
+    
+    // Ejemplo de acciones predefinidas
+    switch (actionName.toLowerCase()) {
+      case 'mostrarAlert':
+        alert(`Checkbox ${newCheckedState ? 'marcado' : 'desmarcado'}: ${comp.text}`);
+        break;
+      case 'console':
+        console.log(`Checkbox ${comp.text}: ${newCheckedState}`);
+        break;
+      // Agregar más casos según necesites
+      default:
+        // Intentar ejecutar función personalizada si existe
+        if (typeof (window as any)[actionName] === 'function') {
+          (window as any)[actionName](newCheckedState, comp);
+        }
+        break;
+    }
+  }
+
+  recalculateCheckboxDimensions(): void {
+    if (!this.selectedComponent || this.selectedComponent.type !== 'Checkbox') return;
+    
+    const checkSize = this.selectedComponent.checkSize || 24;
+    const labelGap = this.selectedComponent.labelGap || 8;
+    const estimatedTextWidth = (this.selectedComponent.text?.length || 8) * 8; // Estimación básica
+    
+    let newWidth = checkSize;
+    let newHeight = checkSize;
+    
+    if (this.selectedComponent.labelPosition === 'right' || this.selectedComponent.labelPosition === 'left') {
+      newWidth = checkSize + labelGap + estimatedTextWidth;
+    } else if (this.selectedComponent.labelPosition === 'top' || this.selectedComponent.labelPosition === 'bottom') {
+      newHeight = checkSize + labelGap + 20; // 20px estimado para el texto
+      newWidth = Math.max(checkSize, estimatedTextWidth);
+    }
+    
+    this.updateProperty('width', newWidth);
+    this.updateProperty('height', newHeight);
+  }
+
+
+
+
+
+
+
+
+
+
+
 
   downloadAngularProject() {
     const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;
     window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
   }
+
+  cargarJsonEjemploLocal() {
+    const jsonEjemplo: CanvasComponent[] = [
+      {
+        id: '581eda85-237c-4224-9cef-ab5aeaf95742',
+        type: 'Container',
+        top: 209,
+        left: 124,
+        width: 100,
+        height: 100,
+        decoration: {
+          color: '#af1818',
+          border: { color: '#000000', width: 13 },
+          borderRadius: 53,
+        },
+        text: undefined,
+        alignment: undefined,
+        options: undefined,
+        icon: undefined,
+        tooltip: undefined,
+        navigateTo: undefined,
+        title: undefined,
+        centerTitle: undefined,
+        leading: null,
+        actions: undefined,
+        selectedOption: undefined,
+        children: [],
+        parentId: null,
+      },
+      {
+        id: 'd005d7ff-d2e2-4a68-8e36-008167f6b849',
+        type: 'IconButton',
+        top: 425,
+        left: 126,
+        width: 48,
+        height: 48,
+        decoration: {
+          color: '#000000',
+          border: { color: '#000000', width: 0 },
+          borderRadius: 8,
+        },
+        text: undefined,
+        alignment: undefined,
+        options: undefined,
+        icon: 'home_outlined',
+        tooltip: 'Ir a Page 2',
+        navigateTo: '/pantalla2',
+        title: undefined,
+        centerTitle: undefined,
+        leading: null,
+        actions: undefined,
+        selectedOption: undefined,
+        children: [],
+        parentId: null,
+      },
+      {
+        id: 'ba32b307-d1a4-475a-9b0d-48b4bdc69d33',
+        type: 'AppBar',
+        top: -2,
+        left: 0,
+        width: 360,
+        height: 56,
+        decoration: {
+          color: '#2196f3',
+          border: { color: '#000000', width: 0 },
+          borderRadius: 0,
+        },
+        text: undefined,
+        alignment: undefined,
+        options: undefined,
+        icon: undefined,
+        tooltip: undefined,
+        navigateTo: undefined,
+        title: undefined,
+        centerTitle: undefined,
+        leading: null,
+        actions: undefined,
+        selectedOption: undefined,
+        parentId: null,
+        children: [
+          {
+            id: '143d6e2c-0d4e-446f-8100-cf33cfaea199',
+            type: 'Text',
+            text: 'Tituloski',
+            width: 100,
+            height: 30,
+            top: 15,
+            left: 138,
+            decoration: {
+              color: 'transparent',
+              border: { color: '#000000', width: 0 },
+              borderRadius: 0,
+            },
+            alignment: 'center',
+            icon: undefined,
+            tooltip: undefined,
+            options: undefined,
+            navigateTo: undefined,
+            title: undefined,
+            centerTitle: undefined,
+            leading: null,
+            actions: undefined,
+            selectedOption: undefined,
+            children: [],
+            parentId: 'ba32b307-d1a4-475a-9b0d-48b4bdc69d33',
+          },
+        ],
+      },
+      {
+        id: 'ca0b043b-7ea6-421f-a6a2-4192802defbd',
+        type: 'Container',
+        width: 100,
+        height: 100,
+        decoration: {
+          color: '#ffffff',
+          border: { color: '#000000', width: 1 },
+          borderRadius: 4,
+        },
+        top: undefined,
+        left: undefined,
+        text: undefined,
+        alignment: 'centerRight',
+        options: undefined,
+        icon: undefined,
+        tooltip: undefined,
+        navigateTo: undefined,
+        title: undefined,
+        centerTitle: undefined,
+        leading: null,
+        actions: undefined,
+        selectedOption: undefined,
+        children: [],
+        parentId: null,
+      },
+      {
+        id: '61162212-4cb1-4509-90c1-f35ce310add2',
+        type: 'DropdownButton',
+        top: 112,
+        left: 110,
+        width: 125,
+        height: 53,
+        decoration: {
+          color: '#8080ff',
+          border: { color: '#a31f1f', width: 3 },
+          borderRadius: 26,
+        },
+        options: ['Opción 1', 'Opción 2', 'opdf'],
+        selectedOption: 'Opción 1',
+        text: undefined,
+       
+        icon: undefined,
+        tooltip: undefined,
+        navigateTo: undefined,
+        title: undefined,
+        centerTitle: undefined,
+        leading: null,
+        actions: undefined,
+        children: [],
+        parentId: null,
+      },
+    ];
+  
+    this.pages[this.currentPantalla].components = [...jsonEjemplo];
+  }
+  
+  
+  
 }
