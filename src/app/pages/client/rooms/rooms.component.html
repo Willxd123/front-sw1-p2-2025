@@ -142,9 +142,19 @@
     > -->
   </aside>
 
+
+
+
+
+
+
+
+
+
+
   <!-- Canvas central: simulación de pantalla móvil -->
   <main
-    class="flex-1 flex justify-center items-center bg-white pt-20"
+    class="flex-1 flex justify-center items-center bg-white pt-20 overflow-auto"
     [ngClass]="{ 'w-full': isPreviewMode, 'w-3/5': !isPreviewMode }"
   >
     <div
@@ -279,9 +289,9 @@
               <!-- Remover los estilos del span que sobrescriben getComponentStyle -->
               <span
                 [ngStyle]="{
-                  'font-size.px': comp.fontSize ,
+                  'font-size.px': comp.fontSize+1 ,
                   color: comp.textColor || '#000000',
-                  'font-family': comp.fontFamily || 'inherit',
+                  'font-family': comp.fontFamily  || 'inherit',
                   'white-space': 'pre-wrap',
                   'text-align': comp.textAlign || 'left',
                   'line-height': '1.4',
