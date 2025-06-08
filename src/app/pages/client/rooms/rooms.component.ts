@@ -26,7 +26,10 @@ interface Page {
   name: string;
   components: CanvasComponent[];
 }
-
+interface ComponentDimensions {
+  width: number;
+  height: number;
+}
 interface CanvasComponent {
   id: string;
   type: string;
@@ -67,23 +70,23 @@ interface CanvasComponent {
 
   children: CanvasComponent[];
   parentId: string | null;
-  selectedOption?: string;     // Opción actualmente seleccionada (para preview)
+  selectedOption?: string; // Opción actualmente seleccionada (para preview)
 
   fontSize?: number;
-  textColor?: string;   // Nueva propiedad para color de texto
-  autoSize?: boolean;   // Control para ajuste automático
+  textColor?: string; // Nueva propiedad para color de texto
+  autoSize?: boolean; // Control para ajuste automático
 
   fontFamily?: string;
   textIndent?: number;
   textAlign?: 'left' | 'center' | 'right' | 'justify';
 
-   // Nuevas propiedades para checkbox:
-   checked?: boolean;
-   checkColor?: string;         // Color del check (✓)
-   labelPosition?: "left" | "right" | "top" | "bottom";
-   labelGap?: number;          // Espacio entre checkbox y texto
-   checkSize?: number;         // Tamaño interno del check (✓)
-   onChangeAction?: string;    // Nombre de la función a ejecutar al cambiar
+  // Nuevas propiedades para checkbox:
+  checked?: boolean;
+  checkColor?: string; // Color del check (✓)
+  labelPosition?: 'left' | 'right' | 'top' | 'bottom';
+  labelGap?: number; // Espacio entre checkbox y texto
+  checkSize?: number; // Tamaño interno del check (✓)
+  onChangeAction?: string; // Nombre de la función a ejecutar al cambiar
 }
 
 interface ContextMenu {
@@ -220,9 +223,21 @@ export class RoomsComponent implements OnInit {
           target[keys[0]] = value;
         };
 
+        // Verificar si se actualizaron dimensiones
+        let dimensionsChanged = false;
         Object.entries(updates).forEach(([key, value]) => {
           apply(component, key.split('.'), value);
+          if (key === 'width' || key === 'height') {
+            dimensionsChanged = true;
+          }
         });
+
+        // NUEVA LÓGICA: Si cambió el tamaño y tiene padre, ajustar padre
+        if (dimensionsChanged && component.parentId) {
+          setTimeout(() => {
+            this.autoResizeParent(component.parentId!);
+          }, 0);
+        }
 
         this.cdr.detectChanges();
       });
@@ -309,28 +324,6 @@ export class RoomsComponent implements OnInit {
     return JSON.stringify(pantallasLimpias, null, 2);
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   //agregar Page
   addPage(): void {
     const newPage: Page = {
@@ -357,14 +350,13 @@ export class RoomsComponent implements OnInit {
   changePantalla(index: number): void {
     this.currentPantalla = index;
     this.selectedComponent = null;
-  
+
     // Sincronizar siempre el índice de previsualización
     if (this.isPreviewMode) {
       this.previewPantallaIndex = index;
     }
     this.cdr.detectChanges();
   }
-  
 
   removePage(pageId: string): void {
     if (!this.roomCode) return;
@@ -387,19 +379,19 @@ export class RoomsComponent implements OnInit {
       type: 'DropdownButton',
       top: 50,
       left: 50,
-      width: 120,       // ancho inicial; puedes ajustar
-      height: 40,       // alto inicial
+      width: 120, // ancho inicial; puedes ajustar
+      height: 40, // alto inicial
       decoration: {
         color: '#ffffff',
         border: { color: '#000000', width: 1 },
         borderRadius: 4,
       },
       options: ['Opción 1', 'Opción 2'], // dos opciones por defecto
-      selectedOption: 'Opción 1',         // selecciona la primera por defecto
+      selectedOption: 'Opción 1', // selecciona la primera por defecto
       children: [],
       parentId: null,
     };
-  
+
     const pageId = this.pages[this.currentPantalla].id;
     this.sokectService.addCanvasComponent(this.roomCode, pageId, newDropdown);
   }
@@ -408,18 +400,18 @@ export class RoomsComponent implements OnInit {
     const defaultCheckSize = 24;
     const defaultLabelGap = 8;
     const estimatedTextWidth = 60; // Ancho estimado para "Etiqueta"
-    
+
     const newCheckbox: CanvasComponent = {
       id: uuidv4(),
       type: 'Checkbox',
       top: 50,
       left: 50,
       // Ajustar dimensiones según la posición de la etiqueta
-      width: defaultCheckSize + defaultLabelGap + estimatedTextWidth,  // Ancho para checkbox + gap + texto
-      height: defaultCheckSize,  // Alto del checkbox
+      width: defaultCheckSize + defaultLabelGap + estimatedTextWidth, // Ancho para checkbox + gap + texto
+      height: defaultCheckSize, // Alto del checkbox
       decoration: {
-        color: 'transparent',  // CONTENEDOR SIEMPRE TRANSPARENTE
-        border: { color: 'transparent', width: 0 },  // Sin borde en el contenedor
+        color: 'transparent', // CONTENEDOR SIEMPRE TRANSPARENTE
+        border: { color: 'transparent', width: 0 }, // Sin borde en el contenedor
         borderRadius: 0,
       },
       // Propiedades específicas del checkbox:
@@ -439,13 +431,9 @@ export class RoomsComponent implements OnInit {
       children: [],
       parentId: null,
     };
-  
+
     const pageId = this.pages[this.currentPantalla].id;
-    this.sokectService.addCanvasComponent(
-      this.roomCode,
-      pageId,
-      newCheckbox
-    );
+    this.sokectService.addCanvasComponent(this.roomCode, pageId, newCheckbox);
   }
 
   ///appbar
@@ -500,6 +488,17 @@ export class RoomsComponent implements OnInit {
       ];
   
     const parent = this.findComponentById(page.components, parentId);
+    
+    if (parent) {
+      // Almacenar tamaño original del padre si no existe
+      if (!this.originalParentSizes.has(parent.id)) {
+        this.originalParentSizes.set(parent.id, {
+          width: parent.width,
+          height: parent.height
+        });
+      }
+    }
+
     const padding = 0;
   
     const child: CanvasComponent = {
@@ -523,8 +522,12 @@ export class RoomsComponent implements OnInit {
   
     this.sokectService.addChildComponent(this.roomCode, parentId, child, page.id);
     this.contextMenu.visible = false;
+
+    // Ajustar tamaño del padre después de agregar hijo
+    setTimeout(() => {
+      this.autoResizeParent(parentId);
+    }, 100);
   }
-  
 
   addIconButton(): void {
     const newIconButton: CanvasComponent = {
@@ -556,9 +559,9 @@ export class RoomsComponent implements OnInit {
   goToPantalla(ruta: string): void {
     const nombreRuta = ruta.replace('/', '');
     const index = this.pages.findIndex(
-      p => p.name.toLowerCase().replace(/ /g, '') === nombreRuta
+      (p) => p.name.toLowerCase().replace(/ /g, '') === nombreRuta
     );
-    
+
     if (index !== -1) {
       this.previewPantallaIndex = index;
       this.currentPantalla = index; // Sincronizar ambos índices
@@ -573,17 +576,6 @@ export class RoomsComponent implements OnInit {
   }
 
   //fin
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -628,7 +620,7 @@ export class RoomsComponent implements OnInit {
 
     this.cdr.detectChanges();
   }
-  
+
   get currentPageId(): string {
     return this.pages[this.currentPantalla]?.id || '';
   }
@@ -797,6 +789,21 @@ export class RoomsComponent implements OnInit {
   }
 
   addChild(parentId: string): void {
+    const page = this.pages[
+      this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+    ];
+    const parent = this.findComponentById(page.components, parentId);
+    
+    if (parent) {
+      // Almacenar tamaño original del padre si no existe
+      if (!this.originalParentSizes.has(parent.id)) {
+        this.originalParentSizes.set(parent.id, {
+          width: parent.width,
+          height: parent.height
+        });
+      }
+    }
+
     const child: CanvasComponent = {
       id: uuidv4(),
       type: 'Container',
@@ -813,10 +820,7 @@ export class RoomsComponent implements OnInit {
       parentId,
     };
 
-    const pageId =
-      this.pages[
-        this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
-      ].id;
+    const pageId = page.id;
 
     this.sokectService.addChildComponent(
       this.roomCode,
@@ -826,7 +830,13 @@ export class RoomsComponent implements OnInit {
     );
 
     this.contextMenu.visible = false;
+
+    // Ajustar tamaño del padre después de agregar hijo
+    setTimeout(() => {
+      this.autoResizeParent(parentId);
+    }, 100);
   }
+
 
   findComponentById(
     list: CanvasComponent[],
@@ -851,29 +861,61 @@ export class RoomsComponent implements OnInit {
 
 
 
+
+
+
+
+
   //para el panel de previsualizacion
   getComponentStyle(comp: CanvasComponent): any {
-    const style: any = {
+    const bw = comp.decoration.border.width;
+const bc = comp.decoration.border.color;
+    /* const style: any = {
       width: comp.width + 'px',
       height: comp.height + 'px',
       backgroundColor: comp.decoration.color,
       border: `${comp.decoration.border.width}px solid ${comp.decoration.border.color}`,
       borderRadius: comp.decoration.borderRadius + 'px',
       position: 'absolute',
-    };
+    }; */
+    const inset = `inset 0 0 0 ${bw}px ${bc}`;
+// ¿está seleccionado este componente?
+const isSel = 
+!this.isPreviewMode && 
+this.selectedComponent?.id === comp.id;
+
+// sombra externa “resalte azul”
+const ring = isSel ? `0 0 0 2px #2563eb` : '';
+
+// combinamos: primero inset, luego ring si corresponde
+const boxShadow = ring ? `${inset}, ${ring}` : inset;
+
+const style: any = {
+  boxSizing: 'border-box',
+  width: comp.width + 'px',
+  height: comp.height + 'px',
+  backgroundColor: comp.decoration.color,
+  // quitamos border…
+  // border: `${bw}px solid ${bc}`,
+  // …y lo sustituimos por un inset-shadow
+  boxShadow,
+  borderRadius: comp.decoration.borderRadius + 'px',
+  position: 'absolute',
+  overflow: 'hidden',  // opcional, para recortar hijos que queden fuera
+};
 
     // Estilos específicos para componentes de texto
     if (comp.type === 'Text') {
-      style.fontSize = (comp.fontSize ) + 'px';
+      style.fontSize = comp.fontSize + 'px';
       style.color = comp.textColor || '#000000';
-    //  style.overflow = 'hidden'; // Evita que el texto se desborde
-     style.textOverflow = 'ellipsis'; // Añade puntos suspensivos si es necesario
-    // style.whiteSpace = 'nowrap'; // Para texto en una línea
+      //  style.overflow = 'hidden'; // Evita que el texto se desborde
+      style.textOverflow = 'ellipsis'; // Añade puntos suspensivos si es necesario
+      // style.whiteSpace = 'nowrap'; // Para texto en una línea
       style.display = 'flex';
       style.alignItems = 'center'; // Centra verticalmente
-     // style.padding_bottom = '20px'; // Añade un pequeño padding interno
+      // style.padding_bottom = '20px'; // Añade un pequeño padding interno
       style.boxSizing = 'border-box'; // Incluye padding en las dimensiones
-    
+
       // Si quieres permitir múltiples líneas, usa esto en lugar de whiteSpace: 'nowrap'
       // style.whiteSpace = 'normal';
       // style.wordWrap = 'break-word';
@@ -884,14 +926,14 @@ export class RoomsComponent implements OnInit {
       ? this.previewPantallaIndex
       : this.currentPantalla;
     const currentPage = this.pages[pageIndex];
-    
+
     // Buscar padre si el componente es hijo
     const parent = comp.parentId
       ? this.findComponentById(currentPage.components, comp.parentId)
       : null;
     const parentWidth = parent?.width || 360;
     const parentHeight = parent?.height || 812;
-   
+
     if (!comp.alignment) {
       style.top = (comp.top ?? 0) + 'px';
       style.left = (comp.left ?? 0) + 'px';
@@ -922,23 +964,23 @@ export class RoomsComponent implements OnInit {
     };
 
     const pos = alignmentMap[comp.alignment];
-let left = pos.left;
-let top  = pos.top;
+    let left = pos.left;
+    let top = pos.top;
 
-// Clamp horizontal
-const maxLeft = parentWidth  - comp.width;
-if (left  < 0)       left = 0;
-if (left  > maxLeft) left = maxLeft;
+    // Clamp horizontal
+    const maxLeft = parentWidth - comp.width;
+    if (left < 0) left = 0;
+    if (left > maxLeft) left = maxLeft;
 
-// Clamp vertical
-const maxTop = parentHeight - comp.height;
-if (top   < 0)     top = 0;
-if (top   > maxTop) top = maxTop;
+    // Clamp vertical
+    const maxTop = parentHeight - comp.height;
+    if (top < 0) top = 0;
+    if (top > maxTop) top = maxTop;
 
-style.left = left + 'px';
-style.top  = top  + 'px';
-return style;
-}
+    style.left = left + 'px';
+    style.top = top + 'px';
+    return style;
+  }
 
   getPantallaSinTopLeft(): CanvasComponent[] {
     return this.pages[this.currentPantalla].components.map((comp) => {
@@ -967,7 +1009,12 @@ return style;
 
 
 
-  
+
+
+
+
+
+
 
   //para el panel derecho encargado de actualizar las propiedades de un widget
 
@@ -975,10 +1022,10 @@ return style;
     if (!this.selectedComponent || !this.roomCode) return;
     const pageId = this.pages[this.currentPantalla].id;
     const componentId = this.selectedComponent.id;
-  
+
     // 1) Actualiza localmente para que la vista inmediata refleje ese cambio
     (this.selectedComponent as any)[key] = value;
-  
+
     // 2) Luego envía al backend
     const updates: any = {};
     updates[key] = value;
@@ -988,8 +1035,17 @@ return style;
       componentId,
       updates
     );
+
+    // 3) NUEVA LÓGICA: Si se cambió width o height y el componente tiene padre, ajustar padre
+    if (
+      (key === 'width' || key === 'height') &&
+      this.selectedComponent.parentId
+    ) {
+      setTimeout(() => {
+        this.autoResizeParent(this.selectedComponent!.parentId!);
+      }, 0);
+    }
   }
-  
 
   getEventValue(event: Event): string {
     const target = event.target as HTMLInputElement | null;
@@ -1011,9 +1067,12 @@ return style;
     this.updateProperty('selectedOption', newValue);
   }
   addDropdownOption() {
-    if (!this.selectedComponent || this.selectedComponent.type !== 'DropdownButton')
+    if (
+      !this.selectedComponent ||
+      this.selectedComponent.type !== 'DropdownButton'
+    )
       return;
-  
+
     const opts = this.selectedComponent.options || [];
     if (this.dropdownNewOption.trim()) {
       opts.push(this.dropdownNewOption.trim());
@@ -1023,17 +1082,22 @@ return style;
       this.dropdownNewOption = '';
     }
   }
-  
+
   removeDropdownOption(optToRemove: string) {
-    if (!this.selectedComponent || this.selectedComponent.type !== 'DropdownButton')
+    if (
+      !this.selectedComponent ||
+      this.selectedComponent.type !== 'DropdownButton'
+    )
       return;
-  
-    const opts = (this.selectedComponent.options || []).filter((o) => o !== optToRemove);
+
+    const opts = (this.selectedComponent.options || []).filter(
+      (o) => o !== optToRemove
+    );
     this.updateProperty('options', opts);
   }
   onDropdownOptionInput(index: number, event: Event) {
     const inputValue = (event.target as HTMLInputElement).value;
-  
+
     if (
       !this.selectedComponent ||
       this.selectedComponent.type !== 'DropdownButton' ||
@@ -1041,10 +1105,10 @@ return style;
     ) {
       return;
     }
-  
+
     // Modificamos el array existente en lugar de crear uno nuevo
     this.selectedComponent.options[index] = inputValue;
-  
+
     // Actualizamos usando el método existente
     const updates = { options: this.selectedComponent.options };
     this.sokectService.updateComponentProperties(
@@ -1057,7 +1121,6 @@ return style;
   trackByFn(index: number, item: any): any {
     return index; // O usa un ID único si tienes
   }
-
   //fin
 
   handleNavigateToChange(event: Event): void {
@@ -1094,36 +1157,44 @@ return style;
     );
   }
 
-
   simulateCheckboxClick(comp: CanvasComponent, event: MouseEvent): void {
     if (!this.isPreviewMode) return;
-    
+
     // Crear un evento sintético para simular el cambio del checkbox
     const syntheticEvent = {
       target: {
-        checked: !comp.checked
-      } as HTMLInputElement
+        checked: !comp.checked,
+      } as HTMLInputElement,
     } as unknown as Event;
-    
+
     // Usar tu método existente
     this.onCheckboxToggle(comp, syntheticEvent);
-    
+
     // Si hay una acción definida, ejecutarla
     if (comp.onChangeAction && comp.onChangeAction.trim()) {
       this.executeCheckboxAction(comp, !comp.checked);
     }
   }
-  
-  private executeCheckboxAction(comp: CanvasComponent, newCheckedState: boolean): void {
+
+  private executeCheckboxAction(
+    comp: CanvasComponent,
+    newCheckedState: boolean
+  ): void {
     const actionName = comp.onChangeAction;
     if (!actionName) return;
-    
-    console.log(`Ejecutando acción: ${actionName} - Checkbox ${newCheckedState ? 'marcado' : 'desmarcado'}`);
-    
+
+    console.log(
+      `Ejecutando acción: ${actionName} - Checkbox ${
+        newCheckedState ? 'marcado' : 'desmarcado'
+      }`
+    );
+
     // Ejemplo de acciones predefinidas
     switch (actionName.toLowerCase()) {
       case 'mostrarAlert':
-        alert(`Checkbox ${newCheckedState ? 'marcado' : 'desmarcado'}: ${comp.text}`);
+        alert(
+          `Checkbox ${newCheckedState ? 'marcado' : 'desmarcado'}: ${comp.text}`
+        );
         break;
       case 'console':
         console.log(`Checkbox ${comp.text}: ${newCheckedState}`);
@@ -1139,22 +1210,29 @@ return style;
   }
 
   recalculateCheckboxDimensions(): void {
-    if (!this.selectedComponent || this.selectedComponent.type !== 'Checkbox') return;
-    
+    if (!this.selectedComponent || this.selectedComponent.type !== 'Checkbox')
+      return;
+
     const checkSize = this.selectedComponent.checkSize || 24;
     const labelGap = this.selectedComponent.labelGap || 8;
     const estimatedTextWidth = (this.selectedComponent.text?.length || 8) * 8; // Estimación básica
-    
+
     let newWidth = checkSize;
     let newHeight = checkSize;
-    
-    if (this.selectedComponent.labelPosition === 'right' || this.selectedComponent.labelPosition === 'left') {
+
+    if (
+      this.selectedComponent.labelPosition === 'right' ||
+      this.selectedComponent.labelPosition === 'left'
+    ) {
       newWidth = checkSize + labelGap + estimatedTextWidth;
-    } else if (this.selectedComponent.labelPosition === 'top' || this.selectedComponent.labelPosition === 'bottom') {
+    } else if (
+      this.selectedComponent.labelPosition === 'top' ||
+      this.selectedComponent.labelPosition === 'bottom'
+    ) {
       newHeight = checkSize + labelGap + 20; // 20px estimado para el texto
       newWidth = Math.max(checkSize, estimatedTextWidth);
     }
-    
+
     this.updateProperty('width', newWidth);
     this.updateProperty('height', newHeight);
   }
@@ -1169,7 +1247,129 @@ return style;
 
 
 
+  //metodos necesario para que un widget padre nunca sea mas pequeño que sus hijos
 
+  // Nueva propiedad para almacenar tamaños originales de padres
+  private originalParentSizes: Map<string, ComponentDimensions> = new Map();
+  private maxParentSizes: Map<string, ComponentDimensions> = new Map();
+  // 3. NUEVO MÉTODO para calcular el tamaño mínimo requerido por los hijos
+  private calculateMinimumParentSize(parent: CanvasComponent): ComponentDimensions {
+    if (!parent.children || parent.children.length === 0) {
+      // Si no hay hijos, mantener el tamaño máximo alcanzado
+      return this.maxParentSizes.get(parent.id) || {
+        width: parent.width,
+        height: parent.height
+      };
+    }
+
+    let maxRequiredWidth = 0;
+    let maxRequiredHeight = 0;
+
+    // Calcular el espacio mínimo requerido basado en los hijos
+    parent.children.forEach(child => {
+      const childRight = (child.left || 0) + child.width;
+      const childBottom = (child.top || 0) + child.height;
+      
+      maxRequiredWidth = Math.max(maxRequiredWidth, childRight);
+      maxRequiredHeight = Math.max(maxRequiredHeight, childBottom);
+    });
+
+    // Obtener el tamaño máximo alcanzado hasta ahora
+    const currentMaxSize = this.maxParentSizes.get(parent.id) || {
+      width: parent.width,
+      height: parent.height
+    };
+
+    // El padre debe ser al menos tan grande como:
+    // 1. Su tamaño máximo alcanzado anteriormente
+    // 2. El espacio requerido por los hijos actuales
+    const requiredWidth = Math.max(currentMaxSize.width, maxRequiredWidth + 10); // +10 padding
+    const requiredHeight = Math.max(currentMaxSize.height, maxRequiredHeight + 10); // +10 padding
+
+    return {
+      width: requiredWidth,
+      height: requiredHeight
+    };
+  }
+
+  // 4. NUEVO MÉTODO para ajustar automáticamente el tamaño del padre
+  private autoResizeParent(parentId: string): void {
+    if (!parentId || !this.roomCode) return;
+
+    const page = this.pages[this.currentPantalla];
+    const parent = this.findComponentById(page.components, parentId);
+    
+    if (!parent) return;
+
+    // Inicializar el tamaño máximo si no existe (primera vez)
+    if (!this.maxParentSizes.has(parent.id)) {
+      this.maxParentSizes.set(parent.id, {
+        width: parent.width,
+        height: parent.height
+      });
+    }
+
+    // Calcular el nuevo tamaño requerido
+    const newSize = this.calculateMinimumParentSize(parent);
+    
+    // Actualizar el tamaño máximo alcanzado si es necesario
+    const currentMaxSize = this.maxParentSizes.get(parent.id)!;
+    const updatedMaxSize = {
+      width: Math.max(currentMaxSize.width, newSize.width),
+      height: Math.max(currentMaxSize.height, newSize.height)
+    };
+    
+    // Guardar el nuevo tamaño máximo
+    this.maxParentSizes.set(parent.id, updatedMaxSize);
+    
+    // Solo actualizar si el tamaño cambió (solo puede crecer, nunca decrecer)
+    if (parent.width < updatedMaxSize.width || parent.height < updatedMaxSize.height) {
+      parent.width = updatedMaxSize.width;
+      parent.height = updatedMaxSize.height;
+
+      // Enviar actualización al servidor
+      const updates = {
+        width: updatedMaxSize.width,
+        height: updatedMaxSize.height
+      };
+
+      this.sokectService.updateComponentProperties(
+        this.roomCode,
+        page.id,
+        parent.id,
+        updates
+      );
+    }
+  }
+  resetParentToOriginalSize(parentId: string): void {
+    const originalSize = this.originalParentSizes.get(parentId);
+    if (!originalSize || !this.roomCode) return;
+
+    const page = this.pages[this.currentPantalla];
+    const parent = this.findComponentById(page.components, parentId);
+    
+    if (!parent) return;
+
+    // Solo resetear si no hay hijos que requieran más espacio
+    const requiredSize = this.calculateMinimumParentSize(parent);
+    
+    if (requiredSize.width <= originalSize.width && requiredSize.height <= originalSize.height) {
+      parent.width = originalSize.width;
+      parent.height = originalSize.height;
+
+      const updates = {
+        width: originalSize.width,
+        height: originalSize.height
+      };
+
+      this.sokectService.updateComponentProperties(
+        this.roomCode,
+        page.id,
+        parent.id,
+        updates
+      );
+    }
+  }
   downloadAngularProject() {
     const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;
     window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
@@ -1177,168 +1377,9 @@ return style;
 
   cargarJsonEjemploLocal() {
     const jsonEjemplo: CanvasComponent[] = [
-      {
-        id: '581eda85-237c-4224-9cef-ab5aeaf95742',
-        type: 'Container',
-        top: 209,
-        left: 124,
-        width: 100,
-        height: 100,
-        decoration: {
-          color: '#af1818',
-          border: { color: '#000000', width: 13 },
-          borderRadius: 53,
-        },
-        text: undefined,
-        alignment: undefined,
-        options: undefined,
-        icon: undefined,
-        tooltip: undefined,
-        navigateTo: undefined,
-        title: undefined,
-        centerTitle: undefined,
-        leading: null,
-        actions: undefined,
-        selectedOption: undefined,
-        children: [],
-        parentId: null,
-      },
-      {
-        id: 'd005d7ff-d2e2-4a68-8e36-008167f6b849',
-        type: 'IconButton',
-        top: 425,
-        left: 126,
-        width: 48,
-        height: 48,
-        decoration: {
-          color: '#000000',
-          border: { color: '#000000', width: 0 },
-          borderRadius: 8,
-        },
-        text: undefined,
-        alignment: undefined,
-        options: undefined,
-        icon: 'home_outlined',
-        tooltip: 'Ir a Page 2',
-        navigateTo: '/pantalla2',
-        title: undefined,
-        centerTitle: undefined,
-        leading: null,
-        actions: undefined,
-        selectedOption: undefined,
-        children: [],
-        parentId: null,
-      },
-      {
-        id: 'ba32b307-d1a4-475a-9b0d-48b4bdc69d33',
-        type: 'AppBar',
-        top: -2,
-        left: 0,
-        width: 360,
-        height: 56,
-        decoration: {
-          color: '#2196f3',
-          border: { color: '#000000', width: 0 },
-          borderRadius: 0,
-        },
-        text: undefined,
-        alignment: undefined,
-        options: undefined,
-        icon: undefined,
-        tooltip: undefined,
-        navigateTo: undefined,
-        title: undefined,
-        centerTitle: undefined,
-        leading: null,
-        actions: undefined,
-        selectedOption: undefined,
-        parentId: null,
-        children: [
-          {
-            id: '143d6e2c-0d4e-446f-8100-cf33cfaea199',
-            type: 'Text',
-            text: 'Tituloski',
-            width: 100,
-            height: 30,
-            top: 15,
-            left: 138,
-            decoration: {
-              color: 'transparent',
-              border: { color: '#000000', width: 0 },
-              borderRadius: 0,
-            },
-            alignment: 'center',
-            icon: undefined,
-            tooltip: undefined,
-            options: undefined,
-            navigateTo: undefined,
-            title: undefined,
-            centerTitle: undefined,
-            leading: null,
-            actions: undefined,
-            selectedOption: undefined,
-            children: [],
-            parentId: 'ba32b307-d1a4-475a-9b0d-48b4bdc69d33',
-          },
-        ],
-      },
-      {
-        id: 'ca0b043b-7ea6-421f-a6a2-4192802defbd',
-        type: 'Container',
-        width: 100,
-        height: 100,
-        decoration: {
-          color: '#ffffff',
-          border: { color: '#000000', width: 1 },
-          borderRadius: 4,
-        },
-        top: undefined,
-        left: undefined,
-        text: undefined,
-        alignment: 'centerRight',
-        options: undefined,
-        icon: undefined,
-        tooltip: undefined,
-        navigateTo: undefined,
-        title: undefined,
-        centerTitle: undefined,
-        leading: null,
-        actions: undefined,
-        selectedOption: undefined,
-        children: [],
-        parentId: null,
-      },
-      {
-        id: '61162212-4cb1-4509-90c1-f35ce310add2',
-        type: 'DropdownButton',
-        top: 112,
-        left: 110,
-        width: 125,
-        height: 53,
-        decoration: {
-          color: '#8080ff',
-          border: { color: '#a31f1f', width: 3 },
-          borderRadius: 26,
-        },
-        options: ['Opción 1', 'Opción 2', 'opdf'],
-        selectedOption: 'Opción 1',
-        text: undefined,
-       
-        icon: undefined,
-        tooltip: undefined,
-        navigateTo: undefined,
-        title: undefined,
-        centerTitle: undefined,
-        leading: null,
-        actions: undefined,
-        children: [],
-        parentId: null,
-      },
+     
     ];
-  
+
     this.pages[this.currentPantalla].components = [...jsonEjemplo];
   }
-  
-  
-  
 }

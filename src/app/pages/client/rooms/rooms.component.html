@@ -257,12 +257,8 @@
       <!-- Template recursivo -->
       <ng-template #renderComponent let-comp="comp">
         <div
-          class="absolute"
-          [ngClass]="{
-            'cursor-move': !isPreviewMode,
-            'ring-2 ring-blue-600':
-              !isPreviewMode && selectedComponent?.id === comp.id
-          }"
+          class="absolute cursor-move"
+          
           [ngStyle]="getComponentStyle(comp)"
           (click)="!isPreviewMode && selectComponent(comp, $event)"
           (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
