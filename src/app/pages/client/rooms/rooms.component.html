@@ -54,11 +54,13 @@
     </button>
 
     <button
-      class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2"
-      (click)="addAppBar()"
-    >
-      AppBar
-    </button>
+  class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2"
+  (click)="addAppBar()"
+  [disabled]="currentHasAppBar()"
+>
+  AppBar
+</button>
+
 
     <button
       type="button"
@@ -344,49 +346,35 @@
             <!-- Render genérico por defecto (otros tipos) -->
             <!-- Agregar este caso dentro del ngSwitch en tu template renderComponent -->
             <ng-container *ngSwitchCase="'Checkbox'">
-              <!-- Contenedor principal del checkbox - SIEMPRE TRANSPARENTE -->
+              <!-- Contenedor principal del checkbox -->
               <div
-                class="flex w-full h-full"
-                [ngClass]="{
-                  'flex-row items-center': comp.labelPosition === 'right',
-                  'flex-row-reverse items-center':
-                    comp.labelPosition === 'left',
-                  'flex-col items-center': comp.labelPosition === 'bottom',
-                  'flex-col-reverse items-center': comp.labelPosition === 'top'
-                }"
+                class="flex w-full h-full items-center justify-center"
                 [ngStyle]="{
-      'gap.px': comp.labelGap || 8,
-      'background-color': 'transparent',
-      'min-width.px': comp.labelPosition === 'bottom' || comp.labelPosition === 'top' ? comp.checkSize || 24 : 'auto',
-      'min-height.px': comp.labelPosition === 'left' || comp.labelPosition === 'right' ? comp.checkSize || 24 : 'auto',
-      
-    }"
+                  'background-color': 'transparent'
+                }"
               >
-                <!-- El checkbox visual -->
+                <!-- El checkbox visual - USA EL TAMAÑO ESCALADO DIRECTAMENTE -->
                 <div
                   class="relative flex items-center justify-center cursor-pointer flex-shrink-0"
                   [ngStyle]="{
-                    'width.px': comp.checkSize || 24,
-                    'height.px': comp.checkSize || 24,
-                    'background-color': '#ffffff',
-                    border:
-                      (comp.decoration?.border?.width || 1) +
-                      'px solid ' +
-                      (comp.decoration?.border?.color || '#000000'),
-                    'border-radius.px': comp.decoration?.borderRadius || 4
+                    'width.px': (comp.checkSize || 24) * (comp.scale || 1),
+                    'height.px': (comp.checkSize || 24) * (comp.scale || 1),
+                    'background-color': comp.checked ? (comp.activeColor || '#FFFF00') : '#ffffff',
+                    border: (comp.borderWidth || 1) + 'px solid ' + (comp.borderColor || comp.checkColor || '#FF0000'),
+                    'border-radius': comp.borderRadius === 50 ? '50%' : (comp.borderRadius || 4) + 'px'
                   }"
                   (click)="
                     isPreviewMode && simulateCheckboxClick(comp, $event);
                     $event.stopPropagation()
                   "
                 >
-                  <!-- El "tick" o check -->
+                  <!-- El "tick" o check - ESCALADO PROPORCIONALMENTE -->
                   <div
                     *ngIf="comp.checked"
                     class="flex items-center justify-center pointer-events-none"
                     [ngStyle]="{
-                      color: comp.checkColor || '#000000',
-                      'font-size.px': (comp.checkSize || 24) * 0.6,
+                      color: comp.checkColor || '#FF0000',
+                      'font-size.px': ((comp.checkSize || 24) * (comp.scale || 1)) * 0.6,
                       'font-weight': 'bold',
                       'line-height': '1'
                     }"
@@ -394,27 +382,6 @@
                     ✓
                   </div>
                 </div>
-
-                <!-- La etiqueta/texto - USA LAS PROPIEDADES DE TEXTO -->
-                <div class="overflow-hidden h-full w-full">
-                  <div
-                    *ngIf="comp.text"
-                    class="w-full h-full flex "
-                    [ngStyle]="{
-                      'font-size.px': comp.fontSize || 14,
-                      color: comp.textColor || '#000000',
-                      'font-family': comp.fontFamily || 'inherit',
-                      'text-align': comp.textAlign || 'left'
-                    }"
-                    (click)="
-                      isPreviewMode && simulateCheckboxClick(comp, $event);
-                      $event.stopPropagation()
-                    "
-                  >
-                    {{ comp.text }}
-                  </div>
-                </div>
-                
               </div>
             </ng-container>
           </ng-container>
@@ -753,7 +720,7 @@
 
       <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-4">
         <h2 class="text-lg font-bold">Propiedades del Checkbox</h2>
-
+        
         <!-- 1) Marcado (checked) -->
         <div class="flex items-center space-x-2">
           <label class="block text-sm font-semibold">Marcado</label>
@@ -763,144 +730,108 @@
             (change)="updateProperty('checked', $any($event.target).checked)"
           />
         </div>
-
+      
         <!-- 2) Color del "tick" (checkColor) -->
         <div>
           <label class="block text-sm font-semibold">Color del check</label>
           <input
             type="color"
-            [value]="selectedComponent.checkColor || '#000000'"
+            [value]="selectedComponent.checkColor || '#FF0000'"
             (input)="updateProperty('checkColor', $any($event.target).value)"
             class="w-full h-8 p-0 border"
           />
         </div>
-
-        <!-- 3) Tamaño del cuadrado (checkSize) -->
+      
+        <!-- 3) Color de fondo activo (activeColor) -->
         <div>
-          <label class="block text-sm font-semibold"
-            >Tamaño del check (px)</label
-          >
+          <label class="block text-sm font-semibold">Color de fondo (marcado)</label>
+          <input
+            type="color"
+            [value]="selectedComponent.activeColor || '#FFFF00'"
+            (input)="updateProperty('activeColor', $any($event.target).value)"
+            class="w-full h-8 p-0 border"
+          />
+        </div>
+      
+        <!-- 4) Color del borde (borderColor) -->
+        <div>
+          <label class="block text-sm font-semibold">Color del borde</label>
+          <input
+            type="color"
+            [value]="selectedComponent.borderColor || '#FF0000'"
+            (input)="updateProperty('borderColor', $any($event.target).value)"
+            class="w-full h-8 p-0 border"
+          />
+        </div>
+      
+        <!-- 5) Ancho del borde (borderWidth) -->
+        <div>
+          <label class="block text-sm font-semibold">Ancho del borde (px)</label>
           <input
             type="number"
+            min="0"
+            max="10"
+            [value]="selectedComponent.borderWidth || 1"
+            (input)="updateProperty('borderWidth', +$any($event.target).value)"
+            class="w-full border p-1"
+          />
+        </div>
+      
+        <!-- 6) Radio del borde (borderRadius) -->
+        <div>
+          <label class="block text-sm font-semibold">Forma (px)</label>
+          <input
+            type="number"
+            [value]="selectedComponent.borderRadius || 4"
+            (input)="updateProperty('borderRadius', getInputNumberValue($event))"
+            class="w-full border p-1"
+            min="0"
+            max="50"
+            step="1"
+          />
+        </div>
+      
+        <!-- 7) Tamaño del checkbox (checkSize) -->
+        <div>
+          <label class="block text-sm font-semibold">Tamaño base (px)</label>
+          <input
+            type="number"
+            min="12"
+            max="100"
             [value]="selectedComponent.checkSize || 24"
             (input)="updateProperty('checkSize', +$any($event.target).value)"
             class="w-full border p-1"
           />
         </div>
-
-        <!-- 4) Texto/Etiqueta que acompaña al checkbox -->
+      
+        <!-- 8) Escala (scale) -->
         <div>
-          <label class="block text-sm font-semibold">Etiqueta (texto)</label>
-          <input
-            type="text"
-            [value]="selectedComponent.text || ''"
-            (input)="updateProperty('text', $any($event.target).value)"
-            class="w-full border p-1"
-          />
-        </div>
-
-        <!-- 5) Propiedades de texto - NUEVAS -->
-        <div>
-          <label class="block text-sm font-semibold"
-            >Tamaño de texto (px)</label
-          >
+          <label class="block text-sm font-semibold">Escala</label>
           <input
             type="number"
-            [value]="selectedComponent.fontSize || 14"
-            (input)="updateProperty('fontSize', getInputNumberValue($event))"
+            [value]="selectedComponent.scale || 1"
+            (input)="updateProperty('scale', getInputNumberValue($event))"
             class="w-full border p-1"
-            min="8"
-            max="100"
+            min="0.1"
+            max="10"
+            step="0.1"
           />
         </div>
-
+      
+        <!-- 9) Separación de etiqueta (labelGap) -->
         <div>
-          <label class="block text-sm font-semibold">Color de texto</label>
-          <input
-            type="color"
-            [value]="selectedComponent.textColor || '#000000'"
-            (input)="updateProperty('textColor', getInputValue($event))"
-            class="w-full h-8 p-0 border"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold">Tipo de letra</label>
-          <select
-            class="w-full border p-1"
-            [value]="selectedComponent.fontFamily || ''"
-            (change)="updateProperty('fontFamily', getInputValue($event))"
-          >
-            <option value="">– Sistema predeterminado –</option>
-            <option value="Arial">Arial</option>
-            <option value="'Times New Roman'">Times New Roman</option>
-            <option value="'Courier New'">Courier New</option>
-            <option value="'Roboto'">Roboto</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold">Alineación de texto</label>
-          <select
-            class="w-full border p-1"
-            [value]="selectedComponent.textAlign || 'left'"
-            (change)="updateProperty('textAlign', getInputValue($event))"
-          >
-            <option value="left">Izquierda</option>
-            <option value="center">Centro</option>
-            <option value="right">Derecha</option>
-            <option value="justify">Justificada</option>
-          </select>
-        </div>
-
-        <!-- 6) Posición de la etiqueta (labelPosition) -->
-        <div>
-          <label class="block text-sm font-semibold"
-            >Posición de la etiqueta</label
-          >
-          <select
-            class="w-full border p-1"
-            [value]="selectedComponent.labelPosition || 'right'"
-            (change)="
-              updateProperty('labelPosition', $any($event.target).value)
-            "
-          >
-            <option value="left">Izquierda</option>
-            <option value="right">Derecha</option>
-            <option value="top">Arriba</option>
-            <option value="bottom">Abajo</option>
-          </select>
-        </div>
-
-        <!-- 7) Espacio entre checkbox y etiqueta (labelGap) -->
-        <div>
-          <label class="block text-sm font-semibold"
-            >Espacio etiqueta (px)</label
-          >
+          <label class="block text-sm font-semibold">Separación de etiqueta (px)</label>
           <input
             type="number"
-            [value]="selectedComponent.labelGap || 4"
+            min="0"
+            max="50"
+            [value]="selectedComponent.labelGap || 8"
             (input)="updateProperty('labelGap', +$any($event.target).value)"
             class="w-full border p-1"
           />
         </div>
-
-        <!-- 8) Acción onChange (onChangeAction) -->
-        <div>
-          <label class="block text-sm font-semibold">onChangeAction</label>
-          <input
-            type="text"
-            [value]="selectedComponent.onChangeAction || ''"
-            (input)="
-              updateProperty('onChangeAction', $any($event.target).value)
-            "
-            placeholder="nombreDeLaFuncion"
-            class="w-full border p-1"
-          />
-          <small class="text-xs text-gray-500">
-            Nombre de la función a ejecutar al cambiar
-          </small>
-        </div>
+      
+        
       </div>
     </div>
   </aside>

@@ -87,6 +87,11 @@ interface CanvasComponent {
   labelGap?: number; // Espacio entre checkbox y texto
   checkSize?: number; // Tamaño interno del check (✓)
   onChangeAction?: string; // Nombre de la función a ejecutar al cambiar
+  activeColor?: string;
+  borderColor?: string; // Color del borde del checkbox
+  borderWidth?: number;
+  borderRadius?: number; // Radio del borde del checkbox
+  scale?: number; // Factor de escala para el checkbox
 }
 
 interface ContextMenu {
@@ -416,65 +421,72 @@ export class RoomsComponent implements OnInit {
   //checkbox
   addCheckbox(): void {
     const defaultCheckSize = 24;
+    const scaledCheckSize = defaultCheckSize * 2; // Por el scale: 2
     const defaultLabelGap = 8;
-    const estimatedTextWidth = 60; // Ancho estimado para "Etiqueta"
-
     const newCheckbox: CanvasComponent = {
       id: uuidv4(),
       type: 'Checkbox',
       top: 50,
       left: 50,
-      // Ajustar dimensiones según la posición de la etiqueta
-      width: defaultCheckSize + defaultLabelGap + estimatedTextWidth, // Ancho para checkbox + gap + texto
-      height: defaultCheckSize, // Alto del checkbox
+      width: scaledCheckSize, // Ancho ajustado por el scale
+      height: scaledCheckSize, // Alto ajustado por el scale
       decoration: {
-        color: 'transparent', // CONTENEDOR SIEMPRE TRANSPARENTE
-        border: { color: 'transparent', width: 0 }, // Sin borde en el contenedor
+        color: 'transparent',
+        border: { color: 'transparent', width: 0 },
         borderRadius: 0,
       },
-      // Propiedades específicas del checkbox:
+      // Propiedades específicas del checkbox personalizado:
       checked: false,
-      checkColor: '#000000',
+      checkColor: '#FF0000', // Rojo (como tu checkColor)
+      activeColor: '#FFFF00', // Amarillo (como tu activeColor)
+      borderColor: '#FF0000', // Rojo (como tu side color)
+      borderWidth: 2,
+      borderRadius: 50, // Circular como tu shape
+      scale: 2, // Factor de escala
+      
+      // Propiedades de etiqueta:
       labelPosition: 'right',
       labelGap: defaultLabelGap,
-      checkSize: defaultCheckSize,
-      onChangeAction: '',
-      text: 'Etiqueta',
-      // Propiedades de texto (como en Text component)
-      fontSize: 14,
-      textColor: '#000000',
-      fontFamily: 'inherit',
-      textAlign: 'left',
-      // Resto de propiedades comunes:
+      checkSize: defaultCheckSize, // Tamaño base antes del scale
+      
       children: [],
       parentId: null,
     };
 
     const pageId = this.pages[this.currentPantalla].id;
     this.sokectService.addCanvasComponent(this.roomCode, pageId, newCheckbox);
-  }
+}
 
   ///appbar
-  addAppBar(): void {
-    const newAppBar: CanvasComponent = {
-      id: uuidv4(),
-      type: 'AppBar',
-      top: 0,
-      left: 0,
-      width: 360,
-      height: 56,
-      decoration: {
-        color: '#2196f3',
-        border: { color: '#000000', width: 0 },
-        borderRadius: 0,
-      },
-      children: [],
-      parentId: null,
-    };
+ /** Devuelve true si ya hay un AppBar en la pantalla actual */
+currentHasAppBar(): boolean {
+  const page = this.pages[this.currentPantalla];
+  return page.components.some(c => c.type === 'AppBar');
+}
 
-    const pageId = this.pages[this.currentPantalla].id;
-    this.sokectService.addCanvasComponent(this.roomCode, pageId, newAppBar);
+addAppBar(): void {
+  if (this.currentHasAppBar()) {
+    return; // ya existe uno, no agregamos otro
   }
+  const newAppBar: CanvasComponent = {
+    id: uuidv4(),
+    type: 'AppBar',
+    top: 0,
+    left: 0,
+    width: 360,
+    height: 70,
+    decoration: {
+      color: '#2196f3',
+      border: { color: '#000000', width: 0 },
+      borderRadius: 0,
+    },
+    children: [],
+    parentId: null,
+  };
+  const pageId = this.pages[this.currentPantalla].id;
+  this.sokectService.addCanvasComponent(this.roomCode, pageId, newAppBar);
+}
+
 
   addContainer(): void {
     const newContainer: CanvasComponent = {
@@ -884,6 +896,14 @@ export class RoomsComponent implements OnInit {
 
 
 
+/** Altura del AppBar si existe, o 0 */
+getReservedAppBarHeight(): number {
+  const page = this.pages[
+    this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla
+  ];
+  const appBar = page.components.find(c => c.type === 'AppBar');
+  return appBar ? appBar.height : 0;
+}
 
   //metodo para previsualizar en el render, igualar el front con lo exportado en flutter
   getComponentStyle(comp: CanvasComponent): any {
@@ -907,6 +927,7 @@ export class RoomsComponent implements OnInit {
       borderRadius: comp.decoration.borderRadius + 'px',
       position: 'absolute',
       overflow: 'hidden',           // recorta hijos que sobresalgan
+      zIndex:     comp.type === 'AppBar' ? 999 : 1,//para que el appbar siempre esta sobre todos los widget
     };
   
     // ——— 3) Estilos extra para TEXT ———————————————————————————————————————
@@ -919,7 +940,15 @@ export class RoomsComponent implements OnInit {
       style.overflowWrap = 'break-word';
       style.boxSizing = 'border-box';
     }
-  
+    if (comp.type === 'Checkbox') {
+      // Para checkbox, el contenedor debe ser del tamaño escalado
+      const baseSize = comp.checkSize || 24;
+      const scale = comp.scale || 1;
+      const scaledSize = baseSize * scale;
+      
+      style.width = scaledSize + 'px';
+      style.height = scaledSize + 'px';
+    }
     // ——— 4) Buscamos padre (para determinar si es hijo) ————————————————————
     const pageIndex = this.isPreviewMode
       ? this.previewPantallaIndex
@@ -1005,25 +1034,28 @@ export class RoomsComponent implements OnInit {
   
     // ——— 8) LÓGICA PARA ELEMENTOS PADRE (sin parentId) ————————————————————
     // Aquí mantenemos la funcionalidad de alineación del primer método
+    const reserved = comp.type === 'AppBar' ? 0 : this.getReservedAppBarHeight();
     if (!comp.alignment) {
       // Positioned: usar coordenadas directas
       style.left = (comp.left ?? 0) + 'px';
-      style.top = (comp.top ?? 0) + 'px';
+      style.top = ((comp.top ?? 0) + reserved) + 'px';
+
     } else {
       // Align: usar alineación respecto al canvas/container principal
       // Asumiendo que el canvas tiene dimensiones fijas (puedes ajustar estos valores)
       const canvasWidth = 360;   // Ajusta según tu canvas
       const canvasHeight = 812;  // Ajusta según tu canvas
-      
+      // Ajustar la altura disponible restando el espacio reservado del AppBar
+  const availableHeight = canvasHeight - reserved;
       const x = {
         left: 0,
         center: (canvasWidth - comp.width) / 2,
         right: canvasWidth - comp.width,
       };
       const y = {
-        top: 0,
-        center: (canvasHeight - comp.height) / 2,
-        bottom: canvasHeight - comp.height,
+        top: reserved, // Empezar después del AppBar
+        center: reserved + (availableHeight - comp.height) / 2, // Centrar en el espacio disponible
+        bottom: canvasHeight - comp.height, // Mantener en la parte inferior del canvas
       };
   
       const alignmentMap: Record<string, { top: number; left: number }> = {
