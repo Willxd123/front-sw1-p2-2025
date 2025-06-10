@@ -70,6 +70,8 @@ interface CanvasComponent {
 
   children: CanvasComponent[];
   parentId: string | null;
+  childrenLayout?: string;    // Disposición de los hijos (row o column)
+  gap?: number;           // Espacio entre hijos (en px)
   selectedOption?: string; // Opción actualmente seleccionada (para preview)
 
   fontSize?: number;
@@ -106,7 +108,15 @@ interface CanvasComponent {
    hintColor?: string;          // Color del hint/placeholder
    inputTextColor?: string;     // Color del texto de entrada
    backgroundColor?: string;    // Color de fondo del input
-   
+   // Nuevas propiedades para padding
+  padding?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+   // O alternativamente, padding uniforme:
+   paddingAll?: number;
  }
 
 
@@ -498,6 +508,34 @@ addAppBar(): void {
   const pageId = this.pages[this.currentPantalla].id;
   this.sokectService.addCanvasComponent(this.roomCode, pageId, newAppBar);
 }
+/** Llamada simple desde el botón cuando hay seleccionado */
+addTextRoot(): void {
+  const pageId = this.pages[this.currentPantalla].id;
+
+  const newText: CanvasComponent = {
+    id: uuidv4(),
+    type: 'Text',
+    text: 'Título',
+    fontSize: 16,
+    autoSize: true,
+    width: 100,
+    height: 30,
+    top: 10,
+    left: 10,
+    
+    children: [],
+    parentId: null,           // ← aquí lo dejamos sin padre
+  };
+
+  // Emitir al servidor como componente root
+  this.sokectService.addCanvasComponent(
+    this.roomCode,
+    pageId,
+    newText
+  );
+ 
+}
+
 
   addContainer(): void {
     const newContainer: CanvasComponent = {
@@ -517,6 +555,8 @@ addAppBar(): void {
       },
       children: [],
       parentId: null,
+      childrenLayout: '',
+    gap: 8,
     };
     const pageId = this.pages[this.currentPantalla].id;
 
@@ -952,6 +992,13 @@ getReservedAppBarHeight(): number {
   const appBar = page.components.find(c => c.type === 'AppBar');
   return appBar ? (appBar.height ?? 0) : 0;
 }
+hasParentLayout(comp: CanvasComponent): boolean {
+  if (!comp.parentId) return false;
+  const page = this.pages[this.currentPantalla];
+  const parent = this.findComponentById(page.components, comp.parentId);
+  return !!parent?.childrenLayout;
+}
+
 
 //metodo para previsualizar en el render, igualar el front con lo exportado en flutter
 getComponentStyle(comp: CanvasComponent): any {
@@ -1044,8 +1091,15 @@ getComponentStyle(comp: CanvasComponent): any {
     };
     const parentBorder = parentDecoration.border ?? { color: 'transparent', width: 0 };
     const borderW = parentBorder.width ?? 0;
-    const innerW = parentWidth - borderW * 2;
-    const innerH = parentHeight - borderW * 2;
+    // Calcular padding del padre
+  const paddingTop = parent.padding?.top || parent.paddingAll || 0;
+  const paddingRight = parent.padding?.right || parent.paddingAll || 0;
+  const paddingBottom = parent.padding?.bottom || parent.paddingAll || 0;
+  const paddingLeft = parent.padding?.left || parent.paddingAll || 0;
+  
+  // Espacio interior considerando bordes Y padding
+  const innerW = parentWidth - borderW * 2 - paddingLeft - paddingRight;
+  const innerH = parentHeight - borderW * 2 - paddingTop - paddingBottom;
 
     // 5.a) Limitar ancho/alto del hijo para que no sobresalga
     if (!comp.alignment) {
@@ -1113,8 +1167,23 @@ getComponentStyle(comp: CanvasComponent): any {
     const clampedLeft = Math.min(Math.max(rawLeft + borderW, minCoord), maxLeft);
     const clampedTop = Math.min(Math.max(rawTop + borderW, minCoord), maxTop);
 
+    // … cálculos de rawLeft/rawTop, clampedLeft/clampedTop …
     style.left = clampedLeft + 'px';
     style.top = clampedTop + 'px';
+
+    // ← Si el padre tiene childrenLayout, anulamos el absolute/left/top
+    if (parent.childrenLayout) {
+      style.position = 'relative';
+      delete style.left;
+      delete style.top;
+      
+      // ——— NUEVA LÓGICA: Aplicar alineación usando flexbox ———————————————
+      if (comp.alignment) {
+        // Convertir alignment a propiedades flex
+        const flexAlignment = this.getFlexAlignment(comp.alignment, parent.childrenLayout);
+        Object.assign(style, flexAlignment);
+      }
+    }
 
     return style;
   }
@@ -1176,6 +1245,94 @@ getComponentStyle(comp: CanvasComponent): any {
 
   return style;
 }
+
+// ——— MÉTODOS AUXILIARES PARA FLEXBOX ———————————————————————————————————————
+
+// Método para obtener justify-content del contenedor padre
+getFlexJustifyContent(comp: CanvasComponent): string {
+  if (!comp.alignment) return 'center'; // default
+  
+  if (comp.childrenLayout === 'row') {
+    // En row, justify-content controla la alineación horizontal
+    if (comp.alignment.includes('Left')) return 'flex-start';
+    if (comp.alignment.includes('Center')) return 'center';
+    if (comp.alignment.includes('Right')) return 'flex-end';
+  } else if (comp.childrenLayout === 'column') {
+    // En column, justify-content controla la alineación vertical
+    if (comp.alignment.includes('top')) return 'flex-start';
+    if (comp.alignment.includes('center')) return 'center';
+    if (comp.alignment.includes('bottom')) return 'flex-end';
+  }
+  
+  return 'flex-start';
+}
+
+// Método para obtener align-items del contenedor padre
+getFlexAlignItems(comp: CanvasComponent): string {
+  if (!comp.alignment) return 'stretch'; // default
+  
+  if (comp.childrenLayout === 'row') {
+    // En row, align-items controla la alineación vertical
+    if (comp.alignment.startsWith('top')) return 'flex-start';
+    if (comp.alignment.startsWith('center')) return 'center';
+    if (comp.alignment.startsWith('bottom')) return 'flex-end';
+  } else if (comp.childrenLayout === 'column') {
+    // En column, align-items controla la alineación horizontal
+    if (comp.alignment.includes('Left')) return 'flex-start';
+    if (comp.alignment.includes('Center')) return 'center';
+    if (comp.alignment.includes('Right')) return 'flex-end';
+  }
+  
+  return 'stretch';
+}
+
+// Método para obtener align-self de elementos hijos individuales
+private getFlexAlignment(alignment: string, parentLayout: string): any {
+  const flexStyles: any = {};
+  
+  if (parentLayout === 'row') {
+    // En layout horizontal (row), align-self controla la alineación vertical del elemento individual
+    switch (alignment) {
+      case 'topLeft':
+      case 'topCenter':
+      case 'topRight':
+        flexStyles.alignSelf = 'flex-start';
+        break;
+      case 'centerLeft':
+      case 'center':
+      case 'centerRight':
+        flexStyles.alignSelf = 'center';
+        break;
+      case 'bottomLeft':
+      case 'bottomCenter':
+      case 'bottomRight':
+        flexStyles.alignSelf = 'flex-end';
+        break;
+    }
+  } else if (parentLayout === 'column') {
+    // En layout vertical (column), align-self controla la alineación horizontal del elemento individual
+    switch (alignment) {
+      case 'topLeft':
+      case 'centerLeft':
+      case 'bottomLeft':
+        flexStyles.alignSelf = 'flex-start';
+        break;
+      case 'topCenter':
+      case 'center':
+      case 'bottomCenter':
+        flexStyles.alignSelf = 'center';
+        break;
+      case 'topRight':
+      case 'centerRight':
+      case 'bottomRight':
+        flexStyles.alignSelf = 'flex-end';
+        break;
+    }
+  }
+  
+  return flexStyles;
+}
+
   
 //metodos auxiliares para agregar el componente textlabel
 // Agregar estas propiedades en tu componente
@@ -1266,8 +1423,36 @@ onPreviewModeChange(): void {
       }
     }
   }
-  
-
+  updatePaddingProperty(side: 'top' | 'right' | 'bottom' | 'left', value: number): void {
+    if (!this.selectedComponent || !this.roomCode) return;
+    
+    const pageId = this.pages[this.currentPantalla].id;
+    const comp = this.selectedComponent;
+    
+    // 1) Actualizar local
+    if (!comp.padding) {
+      comp.padding = {};
+    }
+    
+    comp.padding[side] = value;
+    
+    // Opcional: limpiar paddingAll si se está usando padding individual
+    if (value > 0) {
+      delete comp.paddingAll;
+    }
+    
+    // 2) Enviar al servidor
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      pageId,
+      comp.id,
+      { 
+        padding: comp.padding,
+        // Si se limpió paddingAll, también enviarlo como undefined
+        ...(value > 0 && comp.paddingAll !== undefined ? { paddingAll: undefined } : {})
+      }
+    );
+  }
   getEventValue(event: Event): string {
     const target = event.target as HTMLInputElement | null;
     return target?.value || '';
