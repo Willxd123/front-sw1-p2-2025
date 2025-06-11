@@ -35,12 +35,11 @@
       ➕ Agregar Dropdown
     </button>
     <button
-    class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 mb-2"
-    
-    (click)="addTextRoot()"
-  >
-    ➕ Agregar Texto
-  </button>
+      class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 mb-2"
+      (click)="addTextRoot()"
+    >
+      ➕ Agregar Texto
+    </button>
     <button
       class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 mb-2"
       (click)="addCheckbox()"
@@ -60,19 +59,18 @@
       ➕ Agregar IconButton
     </button>
     <button
-    class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-2"
-    (click)="addTextField()"
-  >
-    📝 Agregar TextField
-  </button>
+      class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mb-2"
+      (click)="addTextField()"
+    >
+      📝 Agregar TextField
+    </button>
     <button
-  class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2"
-  (click)="addAppBar()"
-  [disabled]="currentHasAppBar()"
->
-  AppBar
-</button>
-
+      class="w-full bg-lime-900 text-white py-2 rounded hover:bg-yellow-600 mb-2"
+      (click)="addAppBar()"
+      [disabled]="currentHasAppBar()"
+    >
+      AppBar
+    </button>
 
     <button
       type="button"
@@ -155,16 +153,6 @@
 </pre
     > -->
   </aside>
-
-
-
-
-
-
-
-
-
-
 
   <!-- Canvas central: simulación de pantalla móvil -->
   <main
@@ -270,18 +258,10 @@
         </ng-template>
       </div>
 
-
-
-
-
-
-
-
-
       <!-- Template recursivo -->
       <ng-template #renderComponent let-comp="comp">
         <div
-        [class.absolute]="!hasParentLayout(comp)"
+          [class.absolute]="!hasParentLayout(comp)"
           [class.cursor-move]="!isPreviewMode || comp.type !== 'TextField'"
           [ngStyle]="getComponentStyle(comp)"
           (click)="!isPreviewMode && selectComponent(comp, $event)"
@@ -294,8 +274,8 @@
           (contextmenu)="onRightClick($event, comp); $event.stopPropagation()"
         >
           <ng-container [ngSwitch]="comp.type">
-             <!-- Renderizar TextButton -->
-             <ng-container *ngSwitchCase="'TextButton'">
+            <!-- Renderizar TextButton -->
+            <ng-container *ngSwitchCase="'TextButton'">
               <button
                 class="w-full h-full flex items-center justify-center cursor-pointer"
                 [ngStyle]="{
@@ -312,13 +292,15 @@
                 (click)="
                   !isPreviewMode
                     ? selectComponent(comp, $event)
-                    : (comp.navigateTo ? goToPantalla(comp.navigateTo) : null)
+                    : comp.navigateTo
+                    ? goToPantalla(comp.navigateTo)
+                    : null
                 "
               >
                 {{ comp.text }}
               </button>
             </ng-container>
-            
+
             <!-- Renderizar TEXT -->
             <div
               *ngSwitchCase="'Text'"
@@ -338,7 +320,8 @@
                 class="select-text"
                 (click)="selectComponent(comp, $event)"
                 (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-              >{{comp.text}}</span>
+                >{{ comp.text }}</span
+              >
             </div>
             <!------------------------------------------------------------- -->
             <!-- NUEVO: Renderizar DropdownButton -->
@@ -393,11 +376,20 @@
                 <div
                   class="relative flex items-center justify-center cursor-pointer flex-shrink-0"
                   [ngStyle]="{
-                    'width.px': (comp.checkSize || 24) * (comp.scale || 1),
-                    'height.px': (comp.checkSize || 24) * (comp.scale || 1),
-                    'background-color': comp.checked ? (comp.activeColor || '#FFFF00') : '#ffffff',
-                    border: (comp.borderWidth || 1) + 'px solid ' + (comp.borderColor || comp.checkColor || '#FF0000'),
-                    'border-radius': comp.borderRadius === 50 ? '50%' : (comp.borderRadius || 4) + 'px'
+                    'width.px': (comp.checkSize || 24) * (comp.scale || 1)  ,
+                    'height.px': (comp.checkSize || 24) * (comp.scale || 1) ,
+                    'background-color': comp.checked
+                      ? comp.activeColor || '#FFFF00'
+                      : '#ffffff',
+
+                    border:
+                      (comp.borderWidth + 6|| 1) +
+                      'px solid ' +
+                      (comp.borderColor || comp.checkColor || '#FF0000'),
+                    'border-radius':
+                      comp.borderRadius === 50
+                        ? '50%'
+                        : (comp.borderRadius  || 4) + 'px'
                   }"
                   (click)="
                     isPreviewMode && simulateCheckboxClick(comp, $event);
@@ -410,7 +402,8 @@
                     class="flex items-center justify-center pointer-events-none"
                     [ngStyle]="{
                       color: comp.checkColor || '#FF0000',
-                      'font-size.px': ((comp.checkSize || 24) * (comp.scale || 1)) * 0.6,
+                      'font-size.px':
+                        (comp.checkSize || 24) * (comp.scale || 1) * 0.6,
                       'font-weight': 'bold',
                       'line-height': '1'
                     }"
@@ -420,127 +413,119 @@
                 </div>
               </div>
             </ng-container>
-<!-- renderizado para el TextField -->
-<ng-container *ngSwitchCase="'TextField'">
-  <!-- MODO PREVISUALIZACIÓN: Input funcional (escribible, no se guarda) -->
-  <ng-container *ngIf="isPreviewMode; else editTextField">
-    <input
-      class="w-full h-full outline-none"
-      [type]="comp.inputType || 'text'"
-      [placeholder]="comp.hintText || 'Ingresa texto aquí'"
-      [disabled]="comp.enabled === false"
-      [maxLength]="comp.maxLength"
-      [value]="getTextFieldPreviewValue(comp.id)"
-      (input)="setTextFieldPreviewValue(comp.id, $event)"
-      [ngStyle]="{
-        'background-color': comp.decoration?.color || '#ffffff',
-        border: (comp.decoration?.border?.width || 1) + 'px solid ' +
-                (comp.decoration?.border?.color || '#e0e0e0'),
-        'border-radius': (comp.decoration?.borderRadius || 4) + 'px',
-        'padding-top': comp.labelText ? '20px' : '12px',
-        'padding-bottom': '12px',
-        'padding-left': '12px',
-        'padding-right': '12px',
-        'font-size': (comp.fontSize || 16) + 'px',
-        color: comp.inputTextColor || '#212121',
-        'font-family': comp.fontFamily || 'inherit',
-        cursor: 'text'
-      }"
-      (click)="$event.stopPropagation()"
-      (mousedown)="$event.stopPropagation()"
-      (focus)="$event.stopPropagation()"
-    />
-  </ng-container>
-  
-  <!-- MODO EDICIÓN: Solo muestra el diseño, no es editable -->
-  <ng-template #editTextField>
-    <div
-      class="w-full h-full flex items-center justify-start cursor-pointer"
-      [ngStyle]="{
-        'background-color': comp.decoration?.color || '#ffffff',
-        border: (comp.decoration?.border?.width || 1) + 'px solid ' +
-                (comp.decoration?.border?.color || '#e0e0e0'),
-        'border-radius': (comp.decoration?.borderRadius || 4) + 'px',
-        'padding-top': comp.labelText ? '20px' : '12px',
-        'padding-bottom': '12px',
-        'padding-left': '12px',
-        'padding-right': '12px',
-        'font-size': (comp.fontSize || 16) + 'px',
-        color: comp.hintColor || '#9e9e9e',
-        'font-family': comp.fontFamily || 'inherit'
-      }"
-      (click)="selectComponent(comp, $event)"
-      (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-    >
-      <!-- Mostrar valor actual o placeholder en modo edición -->
-      {{ comp.hintText || 'TextField' }}
-    </div>
-  </ng-template>
-</ng-container>
+            <!-- renderizado para el TextField -->
+            <ng-container *ngSwitchCase="'TextField'">
+              <!-- MODO PREVISUALIZACIÓN: Input funcional (escribible, no se guarda) -->
+              <ng-container *ngIf="isPreviewMode; else editTextField">
+                <input
+                  class="w-full h-full outline-none"
+                  [type]="comp.inputType || 'text'"
+                  [placeholder]="comp.hintText || 'Ingresa texto aquí'"
+                  [disabled]="comp.enabled === false"
+                  [maxLength]="comp.maxLength"
+                  [value]="getTextFieldPreviewValue(comp.id)"
+                  (input)="setTextFieldPreviewValue(comp.id, $event)"
+                  [ngStyle]="{
+                    'background-color': comp.decoration?.color || '#ffffff',
+                    border:
+                      (comp.decoration?.border?.width || 1) +
+                      'px solid ' +
+                      (comp.decoration?.border?.color || '#e0e0e0'),
+                    'border-radius':
+                      (comp.decoration?.borderRadius || 4) + 'px',
+                    'padding-top': comp.labelText ? '20px' : '12px',
+                    'padding-bottom': '12px',
+                    'padding-left': '12px',
+                    'padding-right': '12px',
+                    'font-size': (comp.fontSize || 16) + 'px',
+                    color: comp.inputTextColor || '#212121',
+                    'font-family': comp.fontFamily || 'inherit',
+                    cursor: 'text'
+                  }"
+                  (click)="$event.stopPropagation()"
+                  (mousedown)="$event.stopPropagation()"
+                  (focus)="$event.stopPropagation()"
+                />
+              </ng-container>
+
+              <!-- MODO EDICIÓN: Solo muestra el diseño, no es editable -->
+              <ng-template #editTextField>
+                <div
+                  class="w-full h-full flex items-center justify-start cursor-pointer"
+                  [ngStyle]="{
+                    'background-color': comp.decoration?.color || '#ffffff',
+                    border:
+                      (comp.decoration?.border?.width || 1) +
+                      'px solid ' +
+                      (comp.decoration?.border?.color || '#e0e0e0'),
+                    'border-radius':
+                      (comp.decoration?.borderRadius || 4) + 'px',
+                    'padding-top': comp.labelText ? '20px' : '12px',
+                    'padding-bottom': '12px',
+                    'padding-left': '12px',
+                    'padding-right': '12px',
+                    'font-size': (comp.fontSize || 16) + 'px',
+                    color: comp.hintColor || '#9e9e9e',
+                    'font-family': comp.fontFamily || 'inherit'
+                  }"
+                  (click)="selectComponent(comp, $event)"
+                  (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
+                >
+                  <!-- Mostrar valor actual o placeholder en modo edición -->
+                  {{ comp.hintText || "TextField" }}
+                </div>
+              </ng-template>
+            </ng-container>
           </ng-container>
 
           <!-- Render hijos recursivamente -->
           <!-- Si el padre tiene childrenLayout, usamos flex -->
-<!-- Si el padre tiene childrenLayout, usamos flex con alineación completa -->
-<ng-container *ngIf="comp.childrenLayout; else defaultChildren">
-  <div
-  [ngStyle]="{
-    display: 'flex',
-    'flex-direction': comp.childrenLayout,
-    'gap.px': comp.gap || 8,
-    'justify-content': getFlexJustifyContent(comp),
-    'align-items': getFlexAlignItems(comp),
-    width: '100%',
-    height: '100%',
-    'padding-top.px': comp.padding?.top || comp.paddingAll || 0,
-    'padding-right.px': comp.padding?.right || comp.paddingAll || 0,
-    'padding-bottom.px': comp.padding?.bottom || comp.paddingAll || 0,
-    'padding-left.px': comp.padding?.left || comp.paddingAll || 0,
-    'box-sizing': 'border-box'
-  }"
-  >
-    <ng-container *ngFor="let child of comp.children">
-      <ng-container
-        *ngTemplateOutlet="renderComponent; context: { comp: child }"
-      ></ng-container>
-    </ng-container>
-  </div>
-</ng-container>
+          <!-- Si el padre tiene childrenLayout, usamos flex con alineación completa -->
+          <ng-container *ngIf="comp.childrenLayout; else defaultChildren">
+            <div
+              [ngStyle]="{
+                display: 'flex',
+                'flex-direction': comp.childrenLayout,
+                'gap.px': comp.gap || 8,
+                'justify-content': getFlexJustifyContent(comp),
+                'align-items': getFlexAlignItems(comp),
+                width: '100%',
+                height: '100%',
+                'padding-top.px': comp.padding?.top || comp.paddingAll || 0,
+                'padding-right.px': comp.padding?.right || comp.paddingAll || 0,
+                'padding-bottom.px': comp.padding?.bottom || comp.paddingAll || 0,
+                'padding-left.px': comp.padding?.left || comp.paddingAll || 0,
+                'box-sizing': 'border-box'
+              }"
+            >
+              <!-- Renderizar solo hijos que NO sean Text en el flujo flex -->
+              <ng-container *ngFor="let child of getFlexChildren(comp.children)">
+                <ng-container
+                  *ngTemplateOutlet="renderComponent; context: { comp: child }"
+                ></ng-container>
+              </ng-container>
+            </div>
+            
+            <!-- Renderizar elementos Text por separado (fuera del flujo flex) -->
+            <ng-container *ngFor="let textChild of getTextChildren(comp.children)">
+              <ng-container
+                *ngTemplateOutlet="renderComponent; context: { comp: textChild }"
+              ></ng-container>
+            </ng-container>
+          </ng-container>
 
-<!-- Si no, volvemos al comportamiento original -->
-<ng-template #defaultChildren>
-  <ng-container *ngFor="let child of comp.children">
-    <ng-container
-      *ngTemplateOutlet="renderComponent; context: { comp: child }"
-    ></ng-container>
-  </ng-container>
-</ng-template>
-
+          <!-- Si no, volvemos al comportamiento original -->
+          <ng-template #defaultChildren>
+            <ng-container *ngFor="let child of comp.children">
+              <ng-container
+                *ngTemplateOutlet="renderComponent; context: { comp: child }"
+              ></ng-container>
+            </ng-container>
+          </ng-template>
         </div>
       </ng-template>
-    </div> 
-    
+    </div>
   </main>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   <!-- Columna derecha: panel de configuración -->
   <aside
@@ -548,7 +533,6 @@
     class="w-1/5 bg-gray-100 p-4 border-l border-gray-300 overflow-auto"
   >
     <div *ngIf="selectedComponent" class="space-y-4">
-
       <h2 class="text-lg font-bold">Propiedades del Container</h2>
       <div *ngIf="selectedComponent.type === 'Text'">
         <label class="block text-sm font-semibold">Texto</label>
@@ -737,89 +721,30 @@
         </select>
       </div>
       <!-- selector de Alineación -->
-    <div>
-      <label class="block text-sm font-semibold">Layout hijos</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.childrenLayout || ''"
-        (change)="updateProperty('childrenLayout', getInputValue($event))"
-      >
-        <option value="">— Ninguno —</option>
-        <option value="row">Fila</option>
-        <option value="column">Columna</option>
-      </select>
-    </div>
-    <div *ngIf="selectedComponent.childrenLayout">
-      <label class="block text-sm font-semibold">Gap entre hijos (px)</label>
-      <input
-        type="number"
-        class="w-full border p-1"
-        [value]="selectedComponent.gap || 8"
-        (input)="updateProperty('gap', getInputNumberValue($event))"
-        min="0"
-      />
-    </div>
-    <!-- Controles de Padding -->
-<div *ngIf="selectedComponent.childrenLayout">
-  <label class="block text-sm font-semibold mt-2">Padding (px)</label>
-  
-  <!-- Opción 1: Padding uniforme -->
-  <div class="mb-2">
-    <label class="block text-xs">Uniforme</label>
-    <input
-      type="number"
-      class="w-full border p-1"
-      [value]="selectedComponent.paddingAll || 0"
-      (input)="updateProperty('paddingAll', getInputNumberValue($event))"
-      min="0"
-      placeholder="Padding uniforme"
-    />
-  </div>
-  
-  <!-- Opción 2: Padding individual -->
-  <div class="grid grid-cols-2 gap-1">
-    <div>
-      <label class="block text-xs">Superior</label>
-      <input
-        type="number"
-        class="w-full border p-1 text-xs"
-        [value]="selectedComponent.padding?.top || 0"
-        (input)="updatePaddingProperty('top', getInputNumberValue($event))"
-        min="0"
-      />
-    </div>
-    <div>
-      <label class="block text-xs">Derecha</label>
-      <input
-        type="number"
-        class="w-full border p-1 text-xs"
-        [value]="selectedComponent.padding?.right || 0"
-        (input)="updatePaddingProperty('right', getInputNumberValue($event))"
-        min="0"
-      />
-    </div>
-    <div>
-      <label class="block text-xs">Inferior</label>
-      <input
-        type="number"
-        class="w-full border p-1 text-xs"
-        [value]="selectedComponent.padding?.bottom || 0"
-        (input)="updatePaddingProperty('bottom', getInputNumberValue($event))"
-        min="0"
-      />
-    </div>
-    <div>
-      <label class="block text-xs">Izquierda</label>
-      <input
-        type="number"
-        class="w-full border p-1 text-xs"
-        [value]="selectedComponent.padding?.left || 0"
-        (input)="updatePaddingProperty('left', getInputNumberValue($event))"
-        min="0"
-      />
-    </div>
-  </div>
-</div>
+      <div>
+        <label class="block text-sm font-semibold">Layout hijos</label>
+        <select
+          class="w-full border p-1"
+          [value]="selectedComponent.childrenLayout || ''"
+          (change)="updateChildrenLayout(getInputValue($event))"
+        >
+          <option value="">— Ninguno —</option>
+          <option value="row">Fila</option>
+          <option value="column">Columna</option>
+        </select>
+      </div>
+      
+      <div *ngIf="selectedComponent.childrenLayout">
+        <label class="block text-sm font-semibold">Gap entre hijos (px)</label>
+        <input
+          type="number"
+          class="w-full border p-1"
+          [value]="selectedComponent.gap || 8"
+          (input)="updateProperty('gap', getInputNumberValue($event))"
+          min="0"
+        />
+      </div>
+     
       <!-- Solo si el tipo es IconButton -->
       <div *ngIf="selectedComponent.type === 'TextButton'" class="space-y-2">
         <!-- Etiqueta del botón -->
@@ -832,7 +757,7 @@
             class="w-full border p-1"
           />
         </div>
-      
+
         <!-- Estilo de texto: color y tamaño -->
         <div class="flex gap-2">
           <div class="flex-1">
@@ -856,7 +781,7 @@
             />
           </div>
         </div>
-      
+
         <!-- Nuevo: Tipo de letra -->
         <div>
           <label class="block text-sm font-semibold">Tipo de letra</label>
@@ -872,7 +797,7 @@
             <option value="'Roboto'">Roboto</option>
           </select>
         </div>
-      
+
         <!-- Nuevo: Alineación de texto -->
         <div>
           <label class="block text-sm font-semibold">Alineación de texto</label>
@@ -887,7 +812,7 @@
             <option value="justify">Justificada</option>
           </select>
         </div>
-      
+
         <!-- Ruta de navegación -->
         <div>
           <label class="block text-sm font-semibold">Ruta de navegación</label>
@@ -913,8 +838,7 @@
           </div>
         </div>
       </div>
-      
-      
+
       <!-- Solo si el tipo es DropdownButton -->
       <div
         *ngIf="selectedComponent.type === 'DropdownButton'"
@@ -967,7 +891,7 @@
 
       <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-4">
         <h2 class="text-lg font-bold">Propiedades del Checkbox</h2>
-        
+
         <!-- 1) Marcado (checked) -->
         <div class="flex items-center space-x-2">
           <label class="block text-sm font-semibold">Marcado</label>
@@ -977,7 +901,7 @@
             (change)="updateProperty('checked', $any($event.target).checked)"
           />
         </div>
-      
+
         <!-- 2) Color del "tick" (checkColor) -->
         <div>
           <label class="block text-sm font-semibold">Color del check</label>
@@ -988,10 +912,12 @@
             class="w-full h-8 p-0 border"
           />
         </div>
-      
+
         <!-- 3) Color de fondo activo (activeColor) -->
         <div>
-          <label class="block text-sm font-semibold">Color de fondo (marcado)</label>
+          <label class="block text-sm font-semibold"
+            >Color de fondo (marcado)</label
+          >
           <input
             type="color"
             [value]="selectedComponent.activeColor || '#FFFF00'"
@@ -999,7 +925,7 @@
             class="w-full h-8 p-0 border"
           />
         </div>
-      
+
         <!-- 4) Color del borde (borderColor) -->
         <div>
           <label class="block text-sm font-semibold">Color del borde</label>
@@ -1010,10 +936,12 @@
             class="w-full h-8 p-0 border"
           />
         </div>
-      
+
         <!-- 5) Ancho del borde (borderWidth) -->
         <div>
-          <label class="block text-sm font-semibold">Ancho del borde (px)</label>
+          <label class="block text-sm font-semibold"
+            >Ancho del borde (px)</label
+          >
           <input
             type="number"
             min="0"
@@ -1023,34 +951,25 @@
             class="w-full border p-1"
           />
         </div>
-      
+
         <!-- 6) Radio del borde (borderRadius) -->
         <div>
           <label class="block text-sm font-semibold">Forma (px)</label>
           <input
             type="number"
-            [value]="selectedComponent.borderRadius || 4"
-            (input)="updateProperty('borderRadius', getInputNumberValue($event))"
+            [value]="selectedComponent.borderRadius"
+            (input)="
+              updateProperty('borderRadius', getInputNumberValue($event))
+            "
             class="w-full border p-1"
-            min="0"
-            max="50"
-            step="1"
+            min="1"
+            
           />
         </div>
-      
+
         <!-- 7) Tamaño del checkbox (checkSize) -->
-        <div>
-          <label class="block text-sm font-semibold">Tamaño base (px)</label>
-          <input
-            type="number"
-            min="12"
-            max="100"
-            [value]="selectedComponent.checkSize || 24"
-            (input)="updateProperty('checkSize', +$any($event.target).value)"
-            class="w-full border p-1"
-          />
-        </div>
-      
+       
+
         <!-- 8) Escala (scale) -->
         <div>
           <label class="block text-sm font-semibold">Escala</label>
@@ -1064,11 +983,69 @@
             step="0.1"
           />
         </div>
-      
-        
-      
-        
       </div>
+      
+<!-- Controles de Padding -->
+<div *ngIf="selectedComponent">
+  <label class="block text-sm font-semibold mt-2">Padding (px)</label>
+
+  <!-- Opción 1: Padding uniforme -->
+  <div class="mb-2">
+    <label class="block text-xs">Uniforme</label>
+    <input
+      type="number"
+      class="w-full border p-1"
+      [value]="selectedComponent.paddingAll || 0"
+      (input)="updatePaddingProperty('paddingAll', getInputNumberValue($event))"
+      min="0"
+      placeholder="Padding uniforme"
+    />
+  </div>
+
+  <!-- Opción 2: Padding individual -->
+  <div class="grid grid-cols-2 gap-1">
+    <div>
+      <label class="block text-xs">Superior</label>
+      <input
+        type="number"
+        class="w-full border p-1 text-xs"
+        [value]="selectedComponent.padding?.top || 0"
+        (input)="updatePaddingProperty('top', getInputNumberValue($event))"
+        min="0"
+      />
+    </div>
+    <div>
+      <label class="block text-xs">Derecha</label>
+      <input
+        type="number"
+        class="w-full border p-1 text-xs"
+        [value]="selectedComponent.padding?.right || 0"
+        (input)="updatePaddingProperty('right', getInputNumberValue($event))"
+        min="0"
+      />
+    </div>
+    <div>
+      <label class="block text-xs">Inferior</label>
+      <input
+        type="number"
+        class="w-full border p-1 text-xs"
+        [value]="selectedComponent.padding?.bottom || 0"
+        (input)="updatePaddingProperty('bottom', getInputNumberValue($event))"
+        min="0"
+      />
+    </div>
+    <div>
+      <label class="block text-xs">Izquierda</label>
+      <input
+        type="number"
+        class="w-full border p-1 text-xs"
+        [value]="selectedComponent.padding?.left || 0"
+        (input)="updatePaddingProperty('left', getInputNumberValue($event))"
+        min="0"
+      />
+    </div>
+  </div>
+</div>
     </div>
   </aside>
 </div>
