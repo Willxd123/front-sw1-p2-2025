@@ -469,7 +469,7 @@ const didShrink = (updates.width  !== undefined && newWidth  < previousWidth)
       activeColor: '#FFFF00', // Amarillo (como tu activeColor)
       borderColor: '#FF0000', // Rojo (como tu side color)
       borderWidth: 2,
-      borderRadius: 50, // Circular como tu shape
+      borderRadius: 0, // Circular como tu shape
       scale: 2, // Factor de escala
       checkSize: defaultCheckSize, // Tamaño base antes del scale
       children: [],
@@ -518,7 +518,7 @@ addTextRoot(): void {
     text: 'Título',
     fontSize: 16,
     autoSize: true,
-    width: 100,
+    width: 44,
     height: 30,
     top: 10,
     left: 10,
@@ -589,7 +589,7 @@ addTextRoot(): void {
       text: 'Título',
       fontSize: 16,
       autoSize: true,
-      width: (parent?.width ?? 100) - padding * 2,
+      width: 44,
       height: 30,
       top: padding,
       left: padding,
@@ -984,6 +984,14 @@ addTextField(): void {
 
 
 
+
+
+
+
+
+
+
+  
 /** Altura del AppBar si existe, o 0 */
 getReservedAppBarHeight(): number {
   const page = this.pages[
@@ -1003,8 +1011,8 @@ hasParentLayout(comp: CanvasComponent): boolean {
 //metodo para previsualizar en el render, igualar el front con lo exportado en flutter
 getComponentStyle(comp: CanvasComponent): any {
   // ——— Valores por defecto para propiedades opcionales ———————————————————
-  const compWidth = comp.width ?? 100;    // valor por defecto si width es undefined
-  const compHeight = comp.height ?? 100;  // valor por defecto si height es undefined
+  const compWidth = comp.width ?? 100;
+  const compHeight = comp.height ?? 100;
   
   // ——— 1) Datos de borde y sombra con decoration opcional ————————————————
   const decoration = comp.decoration ?? {
@@ -1014,11 +1022,10 @@ getComponentStyle(comp: CanvasComponent): any {
   };
   
   const border = decoration.border ?? { color: 'transparent', width: 0 };
-  const bw = border.width ?? 0;      // grosor del borde
-  const bc = border.color ?? 'transparent';           // color del borde
-  const inset = `inset 0 0 0 ${bw}px ${bc}`;         // sombra interior para simular el borde
+  const bw = border.width ?? 0;
+  const bc = border.color ?? 'transparent';
+  const inset = `inset 0 0 0 ${bw}px ${bc}`;
   
-  // si está seleccionado, agregamos un "ring" externo
   const isSel = !this.isPreviewMode && this.selectedComponent?.id === comp.id;
   const ring = isSel ? `0 0 0 2px #2563eb` : '';
   const boxShadow = ring ? `${inset}, ${ring}` : inset;
@@ -1026,17 +1033,17 @@ getComponentStyle(comp: CanvasComponent): any {
   // ——— 2) Estilos base del contenedor ————————————————————————————————————
   const style: any = {
     boxSizing: 'border-box',
-    width: compWidth + 'px',     // usar valor con fallback
-    height: compHeight + 'px',   // usar valor con fallback
+    width: compWidth + 'px',
+    height: compHeight + 'px',
     backgroundColor: decoration.color ?? 'transparent',
     boxShadow,
     borderRadius: (decoration.borderRadius ?? 0) + 'px',
     position: 'absolute',
-    overflow: 'hidden',           // recorta hijos que sobresalgan
-    zIndex: comp.type === 'AppBar' ? 999 : 1,//para que el appbar siempre esta sobre todos los widget
+    overflow: 'hidden',
+    zIndex: comp.type === 'AppBar' ? 999 : 1,
   };
 
-  // ——— 3) Estilos extra para TEXT ———————————————————————————————————————
+  // ——— 3) Estilos específicos por tipo ——————————————————————————————————
   if (comp.type === 'Text') {
     style.fontSize = (comp.fontSize ?? 16) + 'px';
     style.color = comp.textColor || '#000000';
@@ -1044,46 +1051,37 @@ getComponentStyle(comp: CanvasComponent): any {
     style.alignItems = 'center';
     style.textOverflow = 'ellipsis';
     style.overflowWrap = 'break-word';
-    style.boxSizing = 'border-box';
   }
   
   if (comp.type === 'Checkbox') {
-    // Para checkbox, el contenedor debe ser del tamaño escalado
     const baseSize = comp.checkSize || 24;
     const scale = comp.scale || 1;
     const scaledSize = baseSize * scale;
-    
     style.width = scaledSize + 'px';
     style.height = scaledSize + 'px';
   }
-  //para los texfield
+
   if (comp.type === 'TextField') {
-    // TextField usa un tamaño mínimo estándar
     const minWidth = 120;
     const minHeight = 56;
-    
     style.width = Math.max(compWidth, minWidth) + 'px';
     style.height = Math.max(compHeight, minHeight) + 'px';
     style.display = 'flex';
     style.flexDirection = 'column';
     style.justifyContent = 'center';
   }
-  // ——— 4) Buscamos padre (para determinar si es hijo) ————————————————————
-  const pageIndex = this.isPreviewMode
-    ? this.previewPantallaIndex
-    : this.currentPantalla;
+
+  // ——— 4) Buscar padre ———————————————————————————————————————————————————
+  const pageIndex = this.isPreviewMode ? this.previewPantallaIndex : this.currentPantalla;
   const currentPage = this.pages[pageIndex];
-  const parent = comp.parentId
-    ? this.findComponentById(currentPage.components, comp.parentId)
-    : null;
+  const parent = comp.parentId ? this.findComponentById(currentPage.components, comp.parentId) : null;
 
   // ——— 5) LÓGICA PARA ELEMENTOS HIJOS ————————————————————————————————————
   if (parent) {
-    // Valores del padre con fallback
     const parentWidth = parent.width ?? 100;
     const parentHeight = parent.height ?? 100;
     
-    // Cálculo de espacio interior del padre (con decoration opcional)
+    // Información del padre
     const parentDecoration = parent.decoration ?? {
       color: 'transparent',
       border: { color: 'transparent', width: 0 },
@@ -1091,95 +1089,209 @@ getComponentStyle(comp: CanvasComponent): any {
     };
     const parentBorder = parentDecoration.border ?? { color: 'transparent', width: 0 };
     const borderW = parentBorder.width ?? 0;
-    // Calcular padding del padre
-  const paddingTop = parent.padding?.top || parent.paddingAll || 0;
-  const paddingRight = parent.padding?.right || parent.paddingAll || 0;
-  const paddingBottom = parent.padding?.bottom || parent.paddingAll || 0;
-  const paddingLeft = parent.padding?.left || parent.paddingAll || 0;
-  
-  // Espacio interior considerando bordes Y padding
-  const innerW = parentWidth - borderW * 2 - paddingLeft - paddingRight;
-  const innerH = parentHeight - borderW * 2 - paddingTop - paddingBottom;
-
-    // 5.a) Limitar ancho/alto del hijo para que no sobresalga
-    if (!comp.alignment) {
-      // Para Positioned: restar además su offset top/left
-      const maxW = innerW - (comp.left ?? 0);
-      const maxH = innerH - (comp.top ?? 0);
-      style.width = Math.min(compWidth, maxW) + 'px';
-      style.height = Math.min(compHeight, maxH) + 'px';
+    
+    // *** APLICAR PADDINGALL CORRECTAMENTE ***
+    // Prioridad: paddingAll -> padding individual
+    let paddingTop, paddingRight, paddingBottom, paddingLeft;
+    
+    if (parent.paddingAll !== undefined && parent.paddingAll > 0) {
+      paddingTop = paddingRight = paddingBottom = paddingLeft = parent.paddingAll;
     } else {
-      // Para Align: solo limitar al interior total
-      style.width = Math.min(compWidth, innerW) + 'px';
-      style.height = Math.min(compHeight, innerH) + 'px';
+      paddingTop = parent.padding?.top || 0;
+      paddingRight = parent.padding?.right || 0;
+      paddingBottom = parent.padding?.bottom || 0;
+      paddingLeft = parent.padding?.left || 0;
     }
+    
+    // Espacio interior del padre
+    const innerW = parentWidth - borderW * 2 - paddingLeft - paddingRight;
+    const innerH = parentHeight - borderW * 2 - paddingTop - paddingBottom;
 
-    // ——— 6) Cálculo de posición "raw" para hijos —————————————————————————
-    let rawLeft: number, rawTop: number;
-    if (!comp.alignment) {
-      // Positioned: usamos los offsets del JSON
-      rawLeft = comp.left ?? 0;
-      rawTop = comp.top ?? 0;
-    } else {
-      // Align: calculamos según el alignmentMap para hijos dentro del padre
-      // IMPORTANTE: Usar el espacio INTERIOR del padre (sin bordes)
+    // ——— CASO A: Padre SIN childrenLayout (posicionamiento absoluto tradicional) ———
+    if (!parent.childrenLayout) {
+      // Limitar tamaño para que no sobresalga
+      if (!comp.alignment) {
+        const maxW = Math.max(0, innerW - (comp.left ?? 0));
+        const maxH = Math.max(0, innerH - (comp.top ?? 0));
+        style.width = Math.min(compWidth, maxW) + 'px';
+        style.height = Math.min(compHeight, maxH) + 'px';
+      } else {
+        style.width = Math.min(compWidth, innerW) + 'px';
+        style.height = Math.min(compHeight, innerH) + 'px';
+      }
+
+      // Calcular posición considerando padding
+      let rawLeft: number, rawTop: number;
+      if (!comp.alignment) {
+        rawLeft = comp.left ?? 0;
+        rawTop = comp.top ?? 0;
+      } else {
+        const usedWidth = parseFloat(style.width);
+        const usedHeight = parseFloat(style.height);
+        
+        const x = {
+          left: 0,
+          center: (innerW - usedWidth) / 2,
+          right: innerW - usedWidth,
+        };
+        const y = {
+          top: 0,
+          center: (innerH - usedHeight) / 2,
+          bottom: innerH - usedHeight,
+        };
+        
+        const alignmentMap: Record<string, { top: number; left: number }> = {
+          topLeft: { top: y.top, left: x.left },
+          topCenter: { top: y.top, left: x.center },
+          topRight: { top: y.top, left: x.right },
+          centerLeft: { top: y.center, left: x.left },
+          center: { top: y.center, left: x.center },
+          centerRight: { top: y.center, left: x.right },
+          bottomLeft: { top: y.bottom, left: x.left },
+          bottomCenter: { top: y.bottom, left: x.center },
+          bottomRight: { top: y.bottom, left: x.right },
+        };
+        
+        const pos = alignmentMap[comp.alignment];
+        rawLeft = pos.left;
+        rawTop = pos.top;
+      }
+
+      // Aplicar posición final considerando borde + padding del padre
+      const finalLeft = borderW + paddingLeft + rawLeft;
+      const finalTop = borderW + paddingTop + rawTop;
       
-      // Obtener dimensiones reales que se van a usar
-      const usedWidth = parseFloat(style.width);
-      const usedHeight = parseFloat(style.height);
-      
-      const x = {
-        left: 0,
-        center: (innerW - usedWidth) / 2,
-        right: innerW - usedWidth,
-      };
-      const y = {
-        top: 0,
-        center: (innerH - usedHeight) / 2,
-        bottom: innerH - usedHeight,
-      };
-      const alignmentMap: Record<string, { top: number; left: number }> = {
-        topLeft: { top: y.top, left: x.left },
-        topCenter: { top: y.top, left: x.center },
-        topRight: { top: y.top, left: x.right },
-        centerLeft: { top: y.center, left: x.left },
-        center: { top: y.center, left: x.center },
-        centerRight: { top: y.center, left: x.right },
-        bottomLeft: { top: y.bottom, left: x.left },
-        bottomCenter: { top: y.bottom, left: x.center },
-        bottomRight: { top: y.bottom, left: x.right },
-      };
-      const pos = alignmentMap[comp.alignment];
-      rawLeft = pos.left;
-      rawTop = pos.top;
+      // Clamp para mantener dentro del padre
+      const usedW = parseFloat(style.width);
+      const usedH = parseFloat(style.height);
+      const maxLeft = parentWidth - usedW;
+      const maxTop = parentHeight - usedH;
+
+      style.left = Math.min(Math.max(finalLeft, borderW), maxLeft) + 'px';
+      style.top = Math.min(Math.max(finalTop, borderW), maxTop) + 'px';
     }
-
-    // ——— 7) Clamp de posición para mantener dentro del borde del padre ———————
-    // margen mínimo = grosor del borde
-    const minCoord = borderW;
-    // límite máximo = parentSize − childSize − borderW
-    const usedW = parseFloat(style.width);
-    const usedH = parseFloat(style.height);
-    const maxLeft = parentWidth - usedW - borderW;
-    const maxTop = parentHeight - usedH - borderW;
-
-    // clamp(raw + border, min, max)
-    const clampedLeft = Math.min(Math.max(rawLeft + borderW, minCoord), maxLeft);
-    const clampedTop = Math.min(Math.max(rawTop + borderW, minCoord), maxTop);
-
-    // … cálculos de rawLeft/rawTop, clampedLeft/clampedTop …
-    style.left = clampedLeft + 'px';
-    style.top = clampedTop + 'px';
-
-    // ← Si el padre tiene childrenLayout, anulamos el absolute/left/top
-    if (parent.childrenLayout) {
+    
+    // ——— CASO B: Padre CON childrenLayout (flexbox) ————————————————————————
+    else {
+      // *** EXCEPCIÓN ESPECIAL PARA ELEMENTOS TEXT ***
+      if (comp.type === 'Text') {
+        // Los elementos Text mantienen posicionamiento absoluto incluso en contenedores flex
+        style.width = Math.min(compWidth, innerW) + 'px';
+        style.height = Math.min(compHeight, innerH) + 'px';
+        style.position = 'absolute';
+        
+        let rawLeft: number, rawTop: number;
+        
+        if (!comp.alignment) {
+          rawLeft = comp.left ?? 0;
+          rawTop = comp.top ?? 0;
+        } else {
+          const usedWidth = parseFloat(style.width);
+          const usedHeight = parseFloat(style.height);
+          
+          const x = {
+            left: 0,
+            center: (innerW - usedWidth) / 2,
+            right: innerW - usedWidth,
+          };
+          const y = {
+            top: 0,
+            center: (innerH - usedHeight) / 2,
+            bottom: innerH - usedHeight,
+          };
+          
+          const alignmentMap: Record<string, { top: number; left: number }> = {
+            topLeft: { top: y.top, left: x.left },
+            topCenter: { top: y.top, left: x.center },
+            topRight: { top: y.top, left: x.right },
+            centerLeft: { top: y.center, left: x.left },
+            center: { top: y.center, left: x.center },
+            centerRight: { top: y.center, left: x.right },
+            bottomLeft: { top: y.bottom, left: x.left },
+            bottomCenter: { top: y.bottom, left: x.center },
+            bottomRight: { top: y.bottom, left: x.right },
+          };
+          
+          const pos = alignmentMap[comp.alignment] || { top: 0, left: 0 };
+          rawLeft = pos.left;
+          rawTop = pos.top;
+        }
+        
+        // Aplicar posición considerando padding
+        const finalLeft = borderW + paddingLeft + rawLeft;
+        const finalTop = borderW + paddingTop + rawTop;
+        
+        const usedW = parseFloat(style.width);
+        const usedH = parseFloat(style.height);
+        const maxLeft = parentWidth - usedW;
+        const maxTop = parentHeight - usedH;
+        
+        style.left = Math.min(Math.max(finalLeft, borderW), maxLeft) + 'px';
+        style.top = Math.min(Math.max(finalTop, borderW), maxTop) + 'px';
+        style.zIndex = 10;
+        
+        return style;
+      }
+      
+      // *** RESTO DE ELEMENTOS (NO TEXT) - COMPORTAMIENTO FLEX NORMAL ***
+      
+      // Calcular tamaño máximo disponible considerando gaps
+      const gap = parent.gap || 8;
+      const siblings = parent.children || [];
+      const flexSiblings = siblings.filter(sibling => sibling.type !== 'Text');
+      const flexSiblingCount = flexSiblings.length;
+      
+      let maxAvailableW = innerW;
+      let maxAvailableH = innerH;
+      
+      if (parent.childrenLayout === 'row' && flexSiblingCount > 1) {
+        const totalGap = gap * (flexSiblingCount - 1);
+        maxAvailableW = Math.max(0, (innerW - totalGap) / flexSiblingCount);
+      } else if (parent.childrenLayout === 'column' && flexSiblingCount > 1) {
+        const totalGap = gap * (flexSiblingCount - 1);
+        maxAvailableH = Math.max(0, (innerH - totalGap) / flexSiblingCount);
+      }
+      
+      // Aplicar límites de tamaño
+      style.width = Math.min(compWidth, maxAvailableW) + 'px';
+      style.height = Math.min(compHeight, maxAvailableH) + 'px';
+      
+      // Configurar como elemento flex
       style.position = 'relative';
       delete style.left;
       delete style.top;
       
-      // ——— NUEVA LÓGICA: Aplicar alineación usando flexbox ———————————————
+      // Si este elemento también es contenedor flex
+      if (comp.children && comp.children.length > 0 && comp.childrenLayout) {
+        style.display = 'flex';
+        style.flexDirection = comp.childrenLayout;
+        style.justifyContent = this.getFlexJustifyContent(comp);
+        style.alignItems = this.getFlexAlignItems(comp);
+        style.gap = (comp.gap || 8) + 'px';
+        
+        // Padding del contenedor (respetando los bordes propios)
+        const ownBorderW = bw;
+        
+        // Aplicar paddingAll correctamente para este contenedor
+        let ownPaddingTop, ownPaddingRight, ownPaddingBottom, ownPaddingLeft;
+        
+        if (comp.paddingAll !== undefined && comp.paddingAll > 0) {
+          ownPaddingTop = ownPaddingRight = ownPaddingBottom = ownPaddingLeft = comp.paddingAll;
+        } else {
+          ownPaddingTop = comp.padding?.top || 0;
+          ownPaddingRight = comp.padding?.right || 0;
+          ownPaddingBottom = comp.padding?.bottom || 0;
+          ownPaddingLeft = comp.padding?.left || 0;
+        }
+        
+        style.paddingTop = (ownPaddingTop + ownBorderW) + 'px';
+        style.paddingRight = (ownPaddingRight + ownBorderW) + 'px';
+        style.paddingBottom = (ownPaddingBottom + ownBorderW) + 'px';
+        style.paddingLeft = (ownPaddingLeft + ownBorderW) + 'px';
+      }
+      
+      // Alineación individual dentro del padre
       if (comp.alignment) {
-        // Convertir alignment a propiedades flex
         const flexAlignment = this.getFlexAlignment(comp.alignment, parent.childrenLayout);
         Object.assign(style, flexAlignment);
       }
@@ -1188,30 +1300,26 @@ getComponentStyle(comp: CanvasComponent): any {
     return style;
   }
 
-  // ——— 8) LÓGICA PARA ELEMENTOS PADRE (sin parentId) ————————————————————
-  // Aquí mantenemos la funcionalidad de alineación del primer método
+  // ——— 6) LÓGICA PARA ELEMENTOS PADRE (sin parentId) ————————————————————
   const reserved = comp.type === 'AppBar' ? 0 : this.getReservedAppBarHeight();
+  
   if (!comp.alignment) {
-    // Positioned: usar coordenadas directas
     style.left = (comp.left ?? 0) + 'px';
     style.top = ((comp.top ?? 0) + reserved) + 'px';
-
   } else {
-    // Align: usar alineación respecto al canvas/container principal
-    // Asumiendo que el canvas tiene dimensiones fijas (puedes ajustar estos valores)
-    const canvasWidth = 360;   // Ajusta según tu canvas
-    const canvasHeight = 812;  // Ajusta según tu canvas
-    // Ajustar la altura disponible restando el espacio reservado del AppBar
+    const canvasWidth = 360;
+    const canvasHeight = 812;
     const availableHeight = canvasHeight - reserved;
+    
     const x = {
       left: 0,
       center: (canvasWidth - compWidth) / 2,
       right: canvasWidth - compWidth,
     };
     const y = {
-      top: reserved, // Empezar después del AppBar
-      center: reserved + (availableHeight - compHeight) / 2, // Centrar en el espacio disponible
-      bottom: canvasHeight - compHeight, // Mantener en la parte inferior del canvas
+      top: reserved,
+      center: reserved + (availableHeight - compHeight) / 2,
+      bottom: canvasHeight - compHeight,
     };
 
     const alignmentMap: Record<string, { top: number; left: number }> = {
@@ -1227,17 +1335,8 @@ getComponentStyle(comp: CanvasComponent): any {
     };
 
     const pos = alignmentMap[comp.alignment];
-    let left = pos.left;
-    let top = pos.top;
-
-    // Clamp para elementos padre (mantener dentro del canvas)
-    const maxLeft = canvasWidth - compWidth;
-    if (left < 0) left = 0;
-    if (left > maxLeft) left = maxLeft;
-
-    const maxTop = canvasHeight - compHeight;
-    if (top < 0) top = 0;
-    if (top > maxTop) top = maxTop;
+    let left = Math.max(0, Math.min(pos.left, canvasWidth - compWidth));
+    let top = Math.max(0, Math.min(pos.top, canvasHeight - compHeight));
 
     style.left = left + 'px';
     style.top = top + 'px';
@@ -1248,28 +1347,29 @@ getComponentStyle(comp: CanvasComponent): any {
 
 // ——— MÉTODOS AUXILIARES PARA FLEXBOX ———————————————————————————————————————
 
-// Método para obtener justify-content del contenedor padre
+/* Método para obtener justify-content del contenedor padre en este caso por mas 
+que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en el centro */
 getFlexJustifyContent(comp: CanvasComponent): string {
   if (!comp.alignment) return 'center'; // default
   
   if (comp.childrenLayout === 'row') {
     // En row, justify-content controla la alineación horizontal
-    if (comp.alignment.includes('Left')) return 'flex-start';
+    if (comp.alignment.includes('Left')) return 'center';
     if (comp.alignment.includes('Center')) return 'center';
-    if (comp.alignment.includes('Right')) return 'flex-end';
+    if (comp.alignment.includes('Right')) return 'center';
   } else if (comp.childrenLayout === 'column') {
     // En column, justify-content controla la alineación vertical
-    if (comp.alignment.includes('top')) return 'flex-start';
+    if (comp.alignment.includes('top')) return 'center';
     if (comp.alignment.includes('center')) return 'center';
-    if (comp.alignment.includes('bottom')) return 'flex-end';
+    if (comp.alignment.includes('bottom')) return 'center';
   }
   
-  return 'flex-start';
+  return 'center';
 }
 
 // Método para obtener align-items del contenedor padre
 getFlexAlignItems(comp: CanvasComponent): string {
-  if (!comp.alignment) return 'stretch'; // default
+  if (!comp.alignment) return 'center'; // default
   
   if (comp.childrenLayout === 'row') {
     // En row, align-items controla la alineación vertical
@@ -1283,7 +1383,7 @@ getFlexAlignItems(comp: CanvasComponent): string {
     if (comp.alignment.includes('Right')) return 'flex-end';
   }
   
-  return 'stretch';
+  return 'center';
 }
 
 // Método para obtener align-self de elementos hijos individuales
@@ -1373,6 +1473,23 @@ onPreviewModeChange(): void {
   }
 
 
+// Métodos auxiliares para agregar a tu componente
+
+/**
+ * Obtiene solo los hijos que participan en el flujo flex (excluye Text)
+ */
+getFlexChildren(children: CanvasComponent[]): CanvasComponent[] {
+  if (!children) return [];
+  return children.filter(child => child.type !== 'Text');
+}
+
+/**
+ * Obtiene solo los hijos de tipo Text
+ */
+getTextChildren(children: CanvasComponent[]): CanvasComponent[] {
+  if (!children) return [];
+  return children.filter(child => child.type === 'Text');
+}
 
 
 
@@ -1380,13 +1497,251 @@ onPreviewModeChange(): void {
 
 
 
+//metodos auxiliares para ajustar tamaños
+/**
+ * Valida y ajusta los tamaños de los hijos cuando el padre cambia de tamaño
+ * considerando si tiene childrenLayout o no
+ */
+private validateAndAdjustChildrenSizes(parentId: string): void {
+  if (!parentId || !this.roomCode) return;
 
+  const page = this.pages[this.currentPantalla];
+  const parent = this.findComponentById(page.components, parentId);
+  
+  if (!parent || !parent.children?.length) return;
 
+  const parentWidth = parent.width ?? 100;
+  const parentHeight = parent.height ?? 100;
+  const borderWidth = parent.decoration?.border?.width ?? 0;
+  
+  // Calcular padding efectivo
+  const effectivePadding = this.getEffectivePadding(parent);
+  
+  // Espacio interior disponible considerando bordes y padding
+  const availableWidth = parentWidth - (borderWidth * 2) - effectivePadding.left - effectivePadding.right;
+  const availableHeight = parentHeight - (borderWidth * 2) - effectivePadding.top - effectivePadding.bottom;
 
+  if (parent.childrenLayout === 'row') {
+    this.validateRowLayoutChildren(parent, availableWidth, availableHeight);
+  } else if (parent.childrenLayout === 'column') {
+    this.validateColumnLayoutChildren(parent, availableWidth, availableHeight);
+  } else {
+    // Layout null/stack - usar validación de posicionamiento absoluto
+    this.validateStackLayoutChildren(parent, availableWidth, availableHeight, effectivePadding, borderWidth);
+  }
+}
 
+/**
+ * Calcula el padding efectivo de un componente
+ */
+private getEffectivePadding(comp: any): { top: number, right: number, bottom: number, left: number } {
+  // Prioridad: paddingAll -> valores individuales
+  if (comp.paddingAll !== undefined && comp.paddingAll > 0) {
+    return {
+      top: comp.paddingAll,
+      right: comp.paddingAll,
+      bottom: comp.paddingAll,
+      left: comp.paddingAll
+    };
+  }
+  
+  return {
+    top: comp.padding?.top ?? 0,
+    right: comp.padding?.right ?? 0,
+    bottom: comp.padding?.bottom ?? 0,
+    left: comp.padding?.left ?? 0
+  };
+}
 
+/**
+ * Valida hijos en layout row
+ */
+private validateRowLayoutChildren(parent: any, availableWidth: number, availableHeight: number): void {
+  const gap = parent.gap ?? 8;
+  const flexChildren = parent.children.filter((child: any) => child.type !== 'Text');
+  
+  if (flexChildren.length === 0) return;
 
+  // Calcular ancho máximo por hijo considerando gaps
+  const totalGaps = gap * (flexChildren.length - 1);
+  const maxWidthPerChild = (availableWidth - totalGaps) / flexChildren.length;
 
+  flexChildren.forEach((child: any) => {
+    let updated = false;
+    const currentWidth = child.width ?? 100;
+    const currentHeight = child.height ?? 100;
+
+    // Ajustar ancho si excede el espacio disponible
+    if (currentWidth > maxWidthPerChild && maxWidthPerChild > 0) {
+      child.width = Math.max(20, maxWidthPerChild); // Mínimo 20px
+      updated = true;
+    }
+
+    // Ajustar altura si excede el espacio disponible
+    if (currentHeight > availableHeight && availableHeight > 0) {
+      child.height = Math.max(20, availableHeight);
+      updated = true;
+    }
+
+    if (updated) {
+      this.emitChildSizeUpdate(child);
+    }
+  });
+}
+
+/**
+ * Valida hijos en layout column
+ */
+private validateColumnLayoutChildren(parent: any, availableWidth: number, availableHeight: number): void {
+  const gap = parent.gap ?? 8;
+  const flexChildren = parent.children.filter((child: any) => child.type !== 'Text');
+  
+  if (flexChildren.length === 0) return;
+
+  // Calcular altura máxima por hijo considerando gaps
+  const totalGaps = gap * (flexChildren.length - 1);
+  const maxHeightPerChild = (availableHeight - totalGaps) / flexChildren.length;
+
+  flexChildren.forEach((child: any) => {
+    let updated = false;
+    const currentWidth = child.width ?? 100;
+    const currentHeight = child.height ?? 100;
+
+    // Ajustar ancho si excede el espacio disponible
+    if (currentWidth > availableWidth && availableWidth > 0) {
+      child.width = Math.max(20, availableWidth);
+      updated = true;
+    }
+
+    // Ajustar altura si excede el espacio disponible
+    if (currentHeight > maxHeightPerChild && maxHeightPerChild > 0) {
+      child.height = Math.max(20, maxHeightPerChild);
+      updated = true;
+    }
+
+    if (updated) {
+      this.emitChildSizeUpdate(child);
+    }
+  });
+}
+/**
+ * Emite la actualización de tamaño del hijo al servidor
+ */
+private emitChildSizeUpdate(child: any): void {
+  const pageId = this.pages[this.currentPantalla].id;
+  this.sokectService.updateComponentProperties(
+    this.roomCode,
+    pageId,
+    child.id,
+    { 
+      width: child.width, 
+      height: child.height 
+    }
+  );
+}
+/**
+ * Valida hijos en layout stack/null (posicionamiento absoluto)
+ */
+private validateStackLayoutChildren(
+  parent: any, 
+  availableWidth: number, 
+  availableHeight: number, 
+  padding: { top: number, right: number, bottom: number, left: number },
+  borderWidth: number
+): void {
+  parent.children.forEach((child: any) => {
+    let updated = false;
+    const currentWidth = child.width ?? 100;
+    const currentHeight = child.height ?? 100;
+    const childLeft = child.left ?? 0;
+    const childTop = child.top ?? 0;
+
+    // Calcular espacio máximo disponible considerando posición
+    const maxWidthFromPosition = availableWidth - childLeft;
+    const maxHeightFromPosition = availableHeight - childTop;
+
+    // Ajustar ancho si se sale del contenedor
+    if (currentWidth > maxWidthFromPosition && maxWidthFromPosition > 0) {
+      child.width = Math.max(20, maxWidthFromPosition);
+      updated = true;
+    }
+
+    // Ajustar altura si se sale del contenedor
+    if (currentHeight > maxHeightFromPosition && maxHeightFromPosition > 0) {
+      child.height = Math.max(20, maxHeightFromPosition);
+      updated = true;
+    }
+
+    if (updated) {
+      this.emitChildSizeUpdate(child);
+    }
+  });
+}
+
+/**
+ * Valida el tamaño mínimo del padre basado en sus hijos y layout
+ */
+private calculateMinimumParentSizeForLayout(parent: any): ComponentDimensions {
+  if (!parent.children || parent.children.length === 0) {
+    return this.maxParentSizes.get(parent.id) || {
+      width: parent.width ?? 100,
+      height: parent.height ?? 100
+    };
+  }
+
+  const borderWidth = parent.decoration?.border?.width ?? 0;
+  const effectivePadding = this.getEffectivePadding(parent);
+  const gap = parent.gap ?? 8;
+
+  let requiredWidth = 0;
+  let requiredHeight = 0;
+
+  if (parent.childrenLayout === 'row') {
+    // En row: sumar anchos + gaps, tomar altura máxima
+    const flexChildren = parent.children.filter((child: any) => child.type !== 'Text');
+    const totalChildrenWidth = flexChildren.reduce((sum: number, child: any) => sum + (child.width ?? 100), 0);
+    const totalGaps = gap * Math.max(0, flexChildren.length - 1);
+    const maxChildHeight = Math.max(...flexChildren.map((child: any) => child.height ?? 100));
+
+    requiredWidth = totalChildrenWidth + totalGaps + effectivePadding.left + effectivePadding.right + (borderWidth * 2);
+    requiredHeight = maxChildHeight + effectivePadding.top + effectivePadding.bottom + (borderWidth * 2);
+
+  } else if (parent.childrenLayout === 'column') {
+    // En column: sumar alturas + gaps, tomar ancho máximo
+    const flexChildren = parent.children.filter((child: any) => child.type !== 'Text');
+    const totalChildrenHeight = flexChildren.reduce((sum: number, child: any) => sum + (child.height ?? 100), 0);
+    const totalGaps = gap * Math.max(0, flexChildren.length - 1);
+    const maxChildWidth = Math.max(...flexChildren.map((child: any) => child.width ?? 100));
+
+    requiredWidth = maxChildWidth + effectivePadding.left + effectivePadding.right + (borderWidth * 2);
+    requiredHeight = totalChildrenHeight + totalGaps + effectivePadding.top + effectivePadding.bottom + (borderWidth * 2);
+
+  } else {
+    // Stack/null: calcular basado en posiciones absolutas
+    parent.children.forEach((child: any) => {
+      const childRight = (child.left || 0) + (child.width || 100);
+      const childBottom = (child.top || 0) + (child.height || 100);
+      
+      requiredWidth = Math.max(requiredWidth, childRight + effectivePadding.right + borderWidth);
+      requiredHeight = Math.max(requiredHeight, childBottom + effectivePadding.bottom + borderWidth);
+    });
+
+    // Agregar padding izquierdo/superior y borde
+    requiredWidth += effectivePadding.left + borderWidth;
+    requiredHeight += effectivePadding.top + borderWidth;
+  }
+
+  // Obtener el tamaño máximo alcanzado hasta ahora
+  const currentMaxSize = this.maxParentSizes.get(parent.id) || {
+    width: parent.width ?? 100,
+    height: parent.height ?? 100
+  };
+
+  return {
+    width: Math.max(currentMaxSize.width, requiredWidth, 50), // Mínimo 50px
+    height: Math.max(currentMaxSize.height, requiredHeight, 50) // Mínimo 50px
+  };
+}
 
 
 
@@ -1394,14 +1749,56 @@ onPreviewModeChange(): void {
 
 
   //para el panel derecho encargado de actualizar las propiedades de un widget
-
+ 
+  
+  // Agregar este método para manejar cambios de childrenLayout
+  
+  updateChildrenLayout(value: string): void {
+    if (!this.selectedComponent || !this.roomCode) return;
+    
+    const pageId = this.pages[this.currentPantalla].id;
+    const comp = this.selectedComponent;
+    
+    // Actualizar local
+    comp.childrenLayout = value || '';
+    
+    // Enviar al servidor
+    this.sokectService.updateComponentProperties(
+      this.roomCode,
+      pageId,
+      comp.id,
+      { childrenLayout: value || '' }
+    );
+    
+    // Cuando cambia el layout, necesitamos:
+    // 1. Recalcular el tamaño del contenedor padre
+    // 2. Validar y ajustar los hijos
+    if (comp.children?.length) {
+      setTimeout(() => {
+        this.validateAndAdjustChildrenSizes(comp.id);
+        
+        // Si tiene padre, también reajustar
+        if (comp.parentId) {
+          this.autoResizeParent(comp.parentId);
+        }
+      }, 0);
+    }
+  }
+  
   updateProperty(key: string, value: any): void {
     if (!this.selectedComponent || !this.roomCode) return;
     const pageId = this.pages[this.currentPantalla].id;
     const comp = this.selectedComponent;
   
     // 1) Actualizar local
-    (comp as any)[key] = value;
+    const keys = key.split('.');
+    let target = comp as any;
+    while (keys.length > 1) {
+      const k = keys.shift()!;
+      if (!(k in target)) target[k] = {};
+      target = target[k];
+    }
+    target[keys[0]] = value;
   
     // 2) Enviar al servidor
     this.sokectService.updateComponentProperties(
@@ -1411,48 +1808,89 @@ onPreviewModeChange(): void {
       { [key]: value }
     );
   
-    // 3) Si cambiaron dimensiones...
+    // 3) Validaciones especiales según el tipo de cambio
     if (key === 'width' || key === 'height') {
-      // a) Si tiene padre → reevalúa crecer del padre
+      // Si cambiaron dimensiones del componente actual
       if (comp.parentId) {
         setTimeout(() => this.autoResizeParent(comp.parentId!), 0);
       }
-      // b) Si tiene hijos → reevalúa encoger de los hijos
       if (comp.children?.length) {
-        setTimeout(() => this.autoShrinkChildren(comp.id), 0);
+        setTimeout(() => this.validateAndAdjustChildrenSizes(comp.id), 0);
+      }
+    } else if (key === 'childrenLayout') {
+      // Usar el método específico para childrenLayout
+      this.updateChildrenLayout(value);
+      return; // Salir temprano ya que updateChildrenLayout ya maneja todo
+    } else if (key === 'gap') {
+      // Si cambió gap, validar hijos
+      if (comp.children?.length) {
+        setTimeout(() => this.validateAndAdjustChildrenSizes(comp.id), 0);
       }
     }
   }
-  updatePaddingProperty(side: 'top' | 'right' | 'bottom' | 'left', value: number): void {
-    if (!this.selectedComponent || !this.roomCode) return;
+  
+updatePaddingProperty(side: 'top' | 'right' | 'bottom' | 'left' | 'paddingAll', value: number): void {
+  if (!this.selectedComponent || !this.roomCode) return;
+  
+  const pageId = this.pages[this.currentPantalla].id;
+  const comp = this.selectedComponent;
+  
+  let updates: any = {};
+  
+  if (side === 'paddingAll') {
+    // Actualizar paddingAll y limpiar padding individual
+    comp.paddingAll = value;
     
-    const pageId = this.pages[this.currentPantalla].id;
-    const comp = this.selectedComponent;
-    
-    // 1) Actualizar local
+    // Si se establece paddingAll, limpiar padding individual
+    if (value > 0) {
+      delete comp.padding;
+      updates = { 
+        paddingAll: value,
+        padding: undefined
+      };
+    } else {
+      updates = { paddingAll: value };
+    }
+  } else {
+    // Actualizar padding individual
     if (!comp.padding) {
       comp.padding = {};
     }
     
     comp.padding[side] = value;
     
-    // Opcional: limpiar paddingAll si se está usando padding individual
-    if (value > 0) {
+    // Si se está usando padding individual, limpiar paddingAll
+    if (value > 0 && comp.paddingAll !== undefined) {
       delete comp.paddingAll;
-    }
-    
-    // 2) Enviar al servidor
-    this.sokectService.updateComponentProperties(
-      this.roomCode,
-      pageId,
-      comp.id,
-      { 
+      updates = { 
         padding: comp.padding,
-        // Si se limpió paddingAll, también enviarlo como undefined
-        ...(value > 0 && comp.paddingAll !== undefined ? { paddingAll: undefined } : {})
-      }
-    );
+        paddingAll: undefined
+      };
+    } else {
+      updates = { 
+        [`padding.${side}`]: value
+      };
+    }
   }
+  
+  // Enviar al servidor
+  this.sokectService.updateComponentProperties(
+    this.roomCode,
+    pageId,
+    comp.id,
+    updates
+  );
+  
+  // Validar y ajustar hijos después del cambio de padding
+  if (comp.children?.length) {
+    setTimeout(() => this.validateAndAdjustChildrenSizes(comp.id), 0);
+  }
+  
+  // Si tiene padre, también podría necesitar reajuste
+  if (comp.parentId) {
+    setTimeout(() => this.autoResizeParent(comp.parentId!), 0);
+  }
+}
   getEventValue(event: Event): string {
     const target = event.target as HTMLInputElement | null;
     return target?.value || '';
@@ -1702,58 +2140,58 @@ onPreviewModeChange(): void {
   }
 
   // MÉTODO para ajustar automáticamente el tamaño del padre
-private autoResizeParent(parentId: string): void {
-  if (!parentId || !this.roomCode) return;
-
-  const page = this.pages[this.currentPantalla];
-  const parent = this.findComponentById(page.components, parentId);
+  private autoResizeParent(parentId: string): void {
+    if (!parentId || !this.roomCode) return;
   
-  if (!parent) return;
-
-  // Inicializar el tamaño máximo si no existe (primera vez)
-  if (!this.maxParentSizes.has(parent.id)) {
-    this.maxParentSizes.set(parent.id, {
-      width: parent.width ?? 100,   // Valor por defecto si width es undefined
-      height: parent.height ?? 100  // Valor por defecto si height es undefined
-    });
-  }
-
-  // Calcular el nuevo tamaño requerido
-  const newSize = this.calculateMinimumParentSize(parent);
+    const page = this.pages[this.currentPantalla];
+    const parent = this.findComponentById(page.components, parentId);
+    
+    if (!parent) return;
   
-  // Actualizar el tamaño máximo alcanzado si es necesario
-  const currentMaxSize = this.maxParentSizes.get(parent.id)!;
-  const updatedMaxSize = {
-    width: Math.max(currentMaxSize.width, newSize.width),
-    height: Math.max(currentMaxSize.height, newSize.height)
-  };
+    // Inicializar el tamaño máximo si no existe
+    if (!this.maxParentSizes.has(parent.id)) {
+      this.maxParentSizes.set(parent.id, {
+        width: parent.width ?? 100,
+        height: parent.height ?? 100
+      });
+    }
   
-  // Guardar el nuevo tamaño máximo
-  this.maxParentSizes.set(parent.id, updatedMaxSize);
-  
-  // Obtener dimensiones actuales del padre con valores por defecto
-  const currentParentWidth = parent.width ?? 100;
-  const currentParentHeight = parent.height ?? 100;
-  
-  // Solo actualizar si el tamaño cambió (solo puede crecer, nunca decrecer)
-  if (currentParentWidth < updatedMaxSize.width || currentParentHeight < updatedMaxSize.height) {
-    parent.width = updatedMaxSize.width;
-    parent.height = updatedMaxSize.height;
-
-    // Enviar actualización al servidor
-    const updates = {
-      width: updatedMaxSize.width,
-      height: updatedMaxSize.height
+    // Calcular nuevo tamaño considerando el layout
+    const newSize = this.calculateMinimumParentSizeForLayout(parent);
+    
+    // Actualizar el tamaño máximo alcanzado
+    const currentMaxSize = this.maxParentSizes.get(parent.id)!;
+    const updatedMaxSize = {
+      width: Math.max(currentMaxSize.width, newSize.width),
+      height: Math.max(currentMaxSize.height, newSize.height)
     };
-
-    this.sokectService.updateComponentProperties(
-      this.roomCode,
-      page.id,
-      parent.id,
-      updates
-    );
+    
+    this.maxParentSizes.set(parent.id, updatedMaxSize);
+    
+    const currentParentWidth = parent.width ?? 100;
+    const currentParentHeight = parent.height ?? 100;
+    
+    // Solo actualizar si el tamaño cambió (solo puede crecer)
+    if (currentParentWidth < updatedMaxSize.width || currentParentHeight < updatedMaxSize.height) {
+      parent.width = updatedMaxSize.width;
+      parent.height = updatedMaxSize.height;
+  
+      const updates = {
+        width: updatedMaxSize.width,
+        height: updatedMaxSize.height
+      };
+  
+      this.sokectService.updateComponentProperties(
+        this.roomCode,
+        page.id,
+        parent.id,
+        updates
+      );
+  
+      // Validar hijos después del cambio de tamaño del padre
+      setTimeout(() => this.validateAndAdjustChildrenSizes(parent.id), 0);
+    }
   }
-}
   resetParentToOriginalSize(parentId: string): void {
     const originalSize = this.originalParentSizes.get(parentId);
     if (!originalSize || !this.roomCode) return;
