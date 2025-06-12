@@ -1,42 +1,88 @@
 export interface CanvasComponent {
   id: string;
-  type: string; // Ej: 'Container', 'Text', 'Column', etc.
-
-  // Posición solo para widgets posicionados manualmente (como Positioned)
+  type: string;
   top?: number;
   left?: number;
-  right?: number;
-  bottom?: number;
-
-  // Dimensiones
   width?: number;
   height?: number;
-
-  // Decoración visual
   decoration?: {
-    color?: string; // Background color
-    border?: {
+    color: string;
+    border: {
       color: string;
-      width: number;
+      width?: number;
     };
-    borderRadius?: number;
+    borderRadius: number;
   };
-
-  // Texto para widgets tipo Text, DropdownButton, etc.
   text?: string;
+  alignment?:
+    | 'topLeft'
+    | 'topCenter'
+    | 'topRight'
+    | 'centerLeft'
+    | 'center'
+    | 'centerRight'
+    | 'bottomLeft'
+    | 'bottomCenter'
+    | 'bottomRight';
 
-  // Alineaciones y layout
-  alignment?: string; // Ej: 'Alignment.center'
-  mainAxisAlignment?: string; // Para Column o Row
-  crossAxisAlignment?: string;
-  textAlign?: string; // Para Text
+  options?: string[];
+  icon?: string; // Nombre del icono, ej. "home_outlined"
+  tooltip?: string; // Texto tooltip
+  navigateTo?: string; // Ruta de navegación, ej. "/pantalla2"
 
-  // Contenido lógico
-  value?: string | boolean;
-  rows?: number;
-  icon?: string;
+  // NUEVAS para AppBar
+  title?: string;
+  centerTitle?: boolean;
+  leading?: CanvasComponent | null;
+  actions?: CanvasComponent[];
 
-  // Relaciones
-  parentId?: string | null;
-  children?: CanvasComponent[];
+  children: CanvasComponent[];
+  parentId: string | null;
+  childrenLayout?: string; // Disposición de los hijos (row o column)
+  gap?: number; // Espacio entre hijos (en px)
+  selectedOption?: string; // Opción actualmente seleccionada (para preview)
+
+  fontSize?: number;
+  textColor?: string; // Nueva propiedad para color de texto
+  autoSize?: boolean; // Control para ajuste automático
+
+  fontFamily?: string;
+  textIndent?: number;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
+
+  // Nuevas propiedades para checkbox:
+  checked?: boolean;
+  checkColor?: string; // Color del check (✓)
+  labelPosition?: 'left' | 'right' | 'top' | 'bottom';
+  labelGap?: number; // Espacio entre checkbox y texto
+  checkSize?: number; // Tamaño interno del check (✓)
+  onChangeAction?: string; // Nombre de la función a ejecutar al cambiar
+  activeColor?: string;
+  borderColor?: string; // Color del borde del checkbox
+  borderWidth?: number;
+  borderRadius?: number; // Radio del borde del checkbox
+  scale?: number; // Factor de escala para el checkbox
+  // Nuevas propiedades específicas para TextField:
+  labelText?: string; // Texto del label
+  hintText?: string; // Texto placeholder
+  value?: string; // Valor actual del input
+  inputType?: 'text' | 'email' | 'password' | 'number' | 'tel'; // Tipo de input
+  maxLength?: number; // Longitud máxima
+  enabled?: boolean; // Si está habilitado o no
+  obscureText?: boolean; // Para passwords (ocultar texto)
+  borderType?: 'outline' | 'underline' | 'none'; // Tipo de borde
+  focusedBorderColor?: string; // Color del borde al hacer focus
+  labelColor?: string; // Color del label
+  hintColor?: string; // Color del hint/placeholder
+  inputTextColor?: string; // Color del texto de entrada
+  backgroundColor?: string; // Color de fondo del input
+  // Nuevas propiedades para padding
+  padding?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
+  // O alternativamente, padding uniforme:
+  paddingAll?: number;
 }

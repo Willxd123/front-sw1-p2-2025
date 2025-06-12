@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/login/login.component';
 /* import { BoardComponent } from './pages/board/board.component'; */
-import { WelcomeComponent } from './pages/client/welcome/welcome.component';
-import { RoomsComponent } from './pages/client/rooms/rooms.component';
+import { WelcomeComponent } from './pages/welcome/welcome.component';
+import { RoomsComponent } from './pages/rooms/rooms.component';
 
 import { RegisterComponent } from './pages/register/register.component';
 import { AuthGuard } from './auth.guard';

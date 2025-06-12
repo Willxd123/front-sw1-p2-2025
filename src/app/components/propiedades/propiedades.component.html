@@ -1,0 +1,498 @@
+<div *ngIf="selectedComponent" class="space-y-4">
+  <h2 class="text-lg font-bold">Propiedades del Container</h2>
+  <div *ngIf="selectedComponent.type === 'Text'">
+    <label class="block text-sm font-semibold">Texto</label>
+    <input
+      type="text"
+      [value]="selectedComponent.text || ''"
+      (input)="updateProperty('text', getInputValue($event))"
+      class="w-full border p-1"
+    />
+    <!-- 👇 Nuevo: Tamaño de fuente -->
+    <div>
+      <label class="block text-sm font-semibold">Tamaño de texto (px)</label>
+      <input
+        type="number"
+        [value]="selectedComponent.fontSize || 14"
+        (input)="updateProperty('fontSize', getInputNumberValue($event))"
+        class="w-full border p-1"
+        min="8"
+        max="100"
+      />
+    </div>
+
+    <!-- 👇 Nuevo: Color de texto -->
+    <div>
+      <label class="block text-sm font-semibold">Color de texto</label>
+      <input
+        type="color"
+        [value]="selectedComponent.textColor || '#000000'"
+        (input)="updateProperty('textColor', getInputValue($event))"
+        class="w-full h-8 p-0 border"
+      />
+    </div>
+
+    <!-- 👇 Nuevo: Tipo de letra (fontFamily) -->
+    <div>
+      <label class="block text-sm font-semibold">Tipo de letra</label>
+      <select
+        class="w-full border p-1"
+        [value]="selectedComponent.fontFamily || ''"
+        (change)="updateProperty('fontFamily', getInputValue($event))"
+      >
+        <option value="">– Sistema predeterminado –</option>
+        <option value="Arial">Arial</option>
+        <option value="'Times New Roman'">Times New Roman</option>
+        <option value="'Courier New'">Courier New</option>
+        <option value="'Roboto'">Roboto</option>
+      </select>
+    </div>
+
+    <!-- 👇 Nuevo: Sangría (padding-left) -->
+    <div>
+      <label class="block text-sm font-semibold">Alineación de texto</label>
+      <select
+        class="w-full border p-1"
+        [value]="selectedComponent.textAlign || 'left'"
+        (change)="updateProperty('textAlign', getInputValue($event))"
+      >
+        <option value="left">Izquierda</option>
+        <option value="center">Centro</option>
+        <option value="right">Derecha</option>
+        <option value="justify">Justificada</option>
+      </select>
+    </div>
+  </div>
+  <!-- Color -->
+  <div>
+    <label class="block text-sm font-semibold">Color</label>
+    <input
+      type="color"
+      [value]="selectedComponent.decoration?.color || '#ffffff'"
+      (input)="updateProperty('decoration.color', getInputValue($event))"
+      class="w-full h-8 p-0 border"
+    />
+  </div>
+
+  <!-- Ancho -->
+  <div>
+    <label class="block text-sm font-semibold">Ancho (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.width"
+      (input)="updateProperty('width', getInputNumberValue($event))"
+      class="w-full border p-1"
+    />
+  </div>
+
+  <!-- Alto -->
+  <div>
+    <label class="block text-sm font-semibold">Alto (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.height"
+      (input)="updateProperty('height', getInputNumberValue($event))"
+      class="w-full border p-1"
+    />
+  </div>
+
+  <!-- Top -->
+  <div>
+    <label class="block text-sm font-semibold">Top (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.top"
+      (input)="updateProperty('top', getInputNumberValue($event))"
+      [disabled]="selectedComponent.alignment"
+      class="w-full border p-1"
+    />
+  </div>
+
+  <!-- Left -->
+  <div>
+    <label class="block text-sm font-semibold">Left (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.left"
+      (input)="updateProperty('left', getInputNumberValue($event))"
+      [disabled]="selectedComponent.alignment"
+      class="w-full border p-1"
+    />
+  </div>
+
+  <!-- Color del borde -->
+  <div>
+    <label class="block text-sm font-semibold">Color del borde</label>
+    <input
+      type="color"
+      [value]="selectedComponent.decoration?.border?.color"
+      (input)="updateProperty('decoration.border.color', getInputValue($event))"
+      class="w-full h-8 p-0 border"
+    />
+  </div>
+
+  <!-- Grosor del borde -->
+  <div>
+    <label class="block text-sm font-semibold">Grosor del borde (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.decoration?.border?.width"
+      (input)="
+        updateProperty('decoration.border.width', getInputNumberValue($event))
+      "
+      class="w-full border p-1"
+    />
+  </div>
+
+  <!-- Radio de borde -->
+  <div>
+    <label class="block text-sm font-semibold">Radio de borde (px)</label>
+    <input
+      type="number"
+      [value]="selectedComponent.decoration?.borderRadius"
+      (input)="
+        updateProperty('decoration.borderRadius', getInputNumberValue($event))
+      "
+      class="w-full border p-1"
+    />
+  </div>
+  <!-- Alineación -->
+  <div>
+    <label class="block text-sm font-semibold">Alineación</label>
+    <select
+      class="w-full border p-1"
+      [value]="selectedComponent.alignment || ''"
+      (change)="updateProperty('alignment', getInputValue($event))"
+    >
+      <option value="">-- Sin alineación (usar top/left) --</option>
+      <option value="topLeft">Arriba izquierda</option>
+      <option value="topCenter">Arriba centro</option>
+      <option value="topRight">Arriba derecha</option>
+      <option value="centerLeft">Centro izquierda</option>
+      <option value="center">Centro</option>
+      <option value="centerRight">Centro derecha</option>
+      <option value="bottomLeft">Abajo izquierda</option>
+      <option value="bottomCenter">Abajo centro</option>
+      <option value="bottomRight">Abajo derecha</option>
+    </select>
+  </div>
+  <!-- selector de Alineación -->
+  <div>
+    <label class="block text-sm font-semibold">Layout hijos</label>
+    <select
+      class="w-full border p-1"
+      [value]="selectedComponent.childrenLayout || ''"
+      (change)="updateChildrenLayout(getInputValue($event))"
+    >
+      <option value="">— Ninguno —</option>
+      <option value="row">Fila</option>
+      <option value="column">Columna</option>
+    </select>
+  </div>
+
+  <div *ngIf="selectedComponent.childrenLayout">
+    <label class="block text-sm font-semibold">Gap entre hijos (px)</label>
+    <input
+      type="number"
+      class="w-full border p-1"
+      [value]="selectedComponent.gap || 8"
+      (input)="updateProperty('gap', getInputNumberValue($event))"
+      min="0"
+    />
+  </div>
+
+  <!-- Solo si el tipo es IconButton -->
+  <div *ngIf="selectedComponent.type === 'TextButton'" class="space-y-2">
+    <!-- Etiqueta del botón -->
+    <div>
+      <label class="block text-sm font-semibold">Texto del botón</label>
+      <input
+        type="text"
+        [value]="selectedComponent.text || ''"
+        (input)="updateProperty('text', getInputValue($event))"
+        class="w-full border p-1"
+      />
+    </div>
+
+    <!-- Estilo de texto: color y tamaño -->
+    <div class="flex gap-2">
+      <div class="flex-1">
+        <label class="block text-sm font-semibold">Color de texto</label>
+        <input
+          type="color"
+          [value]="selectedComponent.textColor"
+          (input)="updateProperty('textColor', getInputValue($event))"
+          class="w-full h-8 p-0 border"
+        />
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-semibold">Tamaño (px)</label>
+        <input
+          type="number"
+          [value]="selectedComponent.fontSize"
+          (input)="updateProperty('fontSize', getInputNumberValue($event))"
+          class="w-full border p-1"
+          min="8"
+          max="64"
+        />
+      </div>
+    </div>
+
+    <!-- Nuevo: Tipo de letra -->
+    <div>
+      <label class="block text-sm font-semibold">Tipo de letra</label>
+      <select
+        class="w-full border p-1"
+        [value]="selectedComponent.fontFamily || ''"
+        (change)="updateProperty('fontFamily', getInputValue($event))"
+      >
+        <option value="">– Sistema predeterminado –</option>
+        <option value="Arial">Arial</option>
+        <option value="'Times New Roman'">Times New Roman</option>
+        <option value="'Courier New'">Courier New</option>
+        <option value="'Roboto'">Roboto</option>
+      </select>
+    </div>
+
+    <!-- Nuevo: Alineación de texto -->
+    <div>
+      <label class="block text-sm font-semibold">Alineación de texto</label>
+      <select
+        class="w-full border p-1"
+        [value]="selectedComponent.textAlign || 'left'"
+        (change)="updateProperty('textAlign', getInputValue($event))"
+      >
+        <option value="left">Izquierda</option>
+        <option value="center">Centro</option>
+        <option value="right">Derecha</option>
+        <option value="justify">Justificada</option>
+      </select>
+    </div>
+
+    <!-- Ruta de navegación -->
+    <div>
+      <label class="block text-sm font-semibold">Ruta de navegación</label>
+      <select
+        class="w-full border p-1"
+        [value]="selectedComponent.navigateTo || ''"
+        (change)="handleNavigateToChange($event)"
+      >
+        <option [value]="''" disabled>Seleccionar pantalla...</option>
+        <option *ngFor="let p of pages" [value]="getRutaPantalla(p.name)">
+          {{ getRutaPantalla(p.name) }}
+        </option>
+        <option value="custom">🔧 Personalizada...</option>
+      </select>
+      <div *ngIf="selectedComponent.navigateTo === 'custom'">
+        <input
+          type="text"
+          class="w-full border p-1 mt-1"
+          placeholder="/mi-ruta"
+          [(ngModel)]="pantallaCustomRoute"
+          (input)="updateProperty('navigateTo', pantallaCustomRoute)"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Solo si el tipo es DropdownButton -->
+  <div *ngIf="selectedComponent.type === 'DropdownButton'" class="space-y-2">
+    <h3 class="text-md font-semibold">Opciones del Dropdown</h3>
+
+    <!-- Listado actual de opciones -->
+    <ul class="list-disc list-inside mb-2">
+      <li
+        *ngFor="
+          let opt of selectedComponent.options;
+          let i = index;
+          trackBy: trackByFn
+        "
+        class="flex items-center gap-2"
+      >
+        <input
+          type="text"
+          [value]="opt"
+          (input)="onDropdownOptionInput(i, $event)"
+          class="flex-1 border px-2 py-1 rounded"
+        />
+        <button
+          class="text-red-500 hover:text-red-700"
+          (click)="removeDropdownOption(opt)"
+          title="Eliminar opción"
+        >
+          ✖
+        </button>
+      </li>
+    </ul>
+
+    <!-- Input para agregar nueva opción -->
+    <div class="flex gap-2 items-center">
+      <input
+        type="text"
+        [(ngModel)]="dropdownNewOption"
+        placeholder="Nueva opción"
+        class="flex-1 border p-1 rounded"
+      />
+      <button
+        class="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+        (click)="addDropdownOption()"
+      >
+        ➕
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-4">
+    <h2 class="text-lg font-bold">Propiedades del Checkbox</h2>
+
+    <!-- 1) Marcado (checked) -->
+    <div class="flex items-center space-x-2">
+      <label class="block text-sm font-semibold">Marcado</label>
+      <input
+        type="checkbox"
+        [checked]="selectedComponent.checked"
+        (change)="updateProperty('checked', $any($event.target).checked)"
+      />
+    </div>
+
+    <!-- 2) Color del "tick" (checkColor) -->
+    <div>
+      <label class="block text-sm font-semibold">Color del check</label>
+      <input
+        type="color"
+        [value]="selectedComponent.checkColor || '#FF0000'"
+        (input)="updateProperty('checkColor', $any($event.target).value)"
+        class="w-full h-8 p-0 border"
+      />
+    </div>
+
+    <!-- 3) Color de fondo activo (activeColor) -->
+    <div>
+      <label class="block text-sm font-semibold"
+        >Color de fondo (marcado)</label
+      >
+      <input
+        type="color"
+        [value]="selectedComponent.activeColor || '#FFFF00'"
+        (input)="updateProperty('activeColor', $any($event.target).value)"
+        class="w-full h-8 p-0 border"
+      />
+    </div>
+
+    <!-- 4) Color del borde (borderColor) -->
+    <div>
+      <label class="block text-sm font-semibold">Color del borde</label>
+      <input
+        type="color"
+        [value]="selectedComponent.borderColor || '#FF0000'"
+        (input)="updateProperty('borderColor', $any($event.target).value)"
+        class="w-full h-8 p-0 border"
+      />
+    </div>
+
+    <!-- 5) Ancho del borde (borderWidth) -->
+    <div>
+      <label class="block text-sm font-semibold">Ancho del borde (px)</label>
+      <input
+        type="number"
+        min="0"
+        max="10"
+        [value]="selectedComponent.borderWidth || 1"
+        (input)="updateProperty('borderWidth', +$any($event.target).value)"
+        class="w-full border p-1"
+      />
+    </div>
+
+    <!-- 6) Radio del borde (borderRadius) -->
+    <div>
+      <label class="block text-sm font-semibold">Forma (px)</label>
+      <input
+        type="number"
+        [value]="selectedComponent.borderRadius"
+        (input)="updateProperty('borderRadius', getInputNumberValue($event))"
+        class="w-full border p-1"
+        min="1"
+      />
+    </div>
+
+    <!-- 7) Tamaño del checkbox (checkSize) -->
+
+    <!-- 8) Escala (scale) -->
+    <div>
+      <label class="block text-sm font-semibold">Escala</label>
+      <input
+        type="number"
+        [value]="selectedComponent.scale || 1"
+        (input)="updateProperty('scale', getInputNumberValue($event))"
+        class="w-full border p-1"
+        min="0.1"
+        max="10"
+        step="0.1"
+      />
+    </div>
+  </div>
+
+  <!-- Controles de Padding -->
+  <div *ngIf="selectedComponent">
+    <label class="block text-sm font-semibold mt-2">Padding (px)</label>
+
+    <!-- Opción 1: Padding uniforme -->
+    <div class="mb-2">
+      <label class="block text-xs">Uniforme</label>
+      <input
+        type="number"
+        class="w-full border p-1"
+        [value]="selectedComponent.paddingAll || 0"
+        (input)="
+          updatePaddingProperty('paddingAll', getInputNumberValue($event))
+        "
+        min="0"
+        placeholder="Padding uniforme"
+      />
+    </div>
+
+    <!-- Opción 2: Padding individual -->
+    <div class="grid grid-cols-2 gap-1">
+      <div>
+        <label class="block text-xs">Superior</label>
+        <input
+          type="number"
+          class="w-full border p-1 text-xs"
+          [value]="selectedComponent.padding?.top || 0"
+          (input)="updatePaddingProperty('top', getInputNumberValue($event))"
+          min="0"
+        />
+      </div>
+      <div>
+        <label class="block text-xs">Derecha</label>
+        <input
+          type="number"
+          class="w-full border p-1 text-xs"
+          [value]="selectedComponent.padding?.right || 0"
+          (input)="updatePaddingProperty('right', getInputNumberValue($event))"
+          min="0"
+        />
+      </div>
+      <div>
+        <label class="block text-xs">Inferior</label>
+        <input
+          type="number"
+          class="w-full border p-1 text-xs"
+          [value]="selectedComponent.padding?.bottom || 0"
+          (input)="updatePaddingProperty('bottom', getInputNumberValue($event))"
+          min="0"
+        />
+      </div>
+      <div>
+        <label class="block text-xs">Izquierda</label>
+        <input
+          type="number"
+          class="w-full border p-1 text-xs"
+          [value]="selectedComponent.padding?.left || 0"
+          (input)="updatePaddingProperty('left', getInputNumberValue($event))"
+          min="0"
+        />
+      </div>
+    </div>
+  </div>
+</div>
