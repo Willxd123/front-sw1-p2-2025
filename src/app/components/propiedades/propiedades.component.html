@@ -1,498 +1,1022 @@
-<div *ngIf="selectedComponent" class="space-y-4">
-  <h2 class="text-lg font-bold">Propiedades del Container</h2>
-  <div *ngIf="selectedComponent.type === 'Text'">
-    <label class="block text-sm font-semibold">Texto</label>
-    <input
-      type="text"
-      [value]="selectedComponent.text || ''"
-      (input)="updateProperty('text', getInputValue($event))"
-      class="w-full border p-1"
-    />
-    <!-- 👇 Nuevo: Tamaño de fuente -->
-    <div>
-      <label class="block text-sm font-semibold">Tamaño de texto (px)</label>
-      <input
-        type="number"
-        [value]="selectedComponent.fontSize || 14"
-        (input)="updateProperty('fontSize', getInputNumberValue($event))"
-        class="w-full border p-1"
-        min="8"
-        max="100"
-      />
-    </div>
-
-    <!-- 👇 Nuevo: Color de texto -->
-    <div>
-      <label class="block text-sm font-semibold">Color de texto</label>
-      <input
-        type="color"
-        [value]="selectedComponent.textColor || '#000000'"
-        (input)="updateProperty('textColor', getInputValue($event))"
-        class="w-full h-8 p-0 border"
-      />
-    </div>
-
-    <!-- 👇 Nuevo: Tipo de letra (fontFamily) -->
-    <div>
-      <label class="block text-sm font-semibold">Tipo de letra</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.fontFamily || ''"
-        (change)="updateProperty('fontFamily', getInputValue($event))"
-      >
-        <option value="">– Sistema predeterminado –</option>
-        <option value="Arial">Arial</option>
-        <option value="'Times New Roman'">Times New Roman</option>
-        <option value="'Courier New'">Courier New</option>
-        <option value="'Roboto'">Roboto</option>
-      </select>
-    </div>
-
-    <!-- 👇 Nuevo: Sangría (padding-left) -->
-    <div>
-      <label class="block text-sm font-semibold">Alineación de texto</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.textAlign || 'left'"
-        (change)="updateProperty('textAlign', getInputValue($event))"
-      >
-        <option value="left">Izquierda</option>
-        <option value="center">Centro</option>
-        <option value="right">Derecha</option>
-        <option value="justify">Justificada</option>
-      </select>
-    </div>
-  </div>
-  <!-- Color -->
-  <div>
-    <label class="block text-sm font-semibold">Color</label>
-    <input
-      type="color"
-      [value]="selectedComponent.decoration?.color || '#ffffff'"
-      (input)="updateProperty('decoration.color', getInputValue($event))"
-      class="w-full h-8 p-0 border"
-    />
-  </div>
-
-  <!-- Ancho -->
-  <div>
-    <label class="block text-sm font-semibold">Ancho (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.width"
-      (input)="updateProperty('width', getInputNumberValue($event))"
-      class="w-full border p-1"
-    />
-  </div>
-
-  <!-- Alto -->
-  <div>
-    <label class="block text-sm font-semibold">Alto (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.height"
-      (input)="updateProperty('height', getInputNumberValue($event))"
-      class="w-full border p-1"
-    />
-  </div>
-
-  <!-- Top -->
-  <div>
-    <label class="block text-sm font-semibold">Top (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.top"
-      (input)="updateProperty('top', getInputNumberValue($event))"
-      [disabled]="selectedComponent.alignment"
-      class="w-full border p-1"
-    />
-  </div>
-
-  <!-- Left -->
-  <div>
-    <label class="block text-sm font-semibold">Left (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.left"
-      (input)="updateProperty('left', getInputNumberValue($event))"
-      [disabled]="selectedComponent.alignment"
-      class="w-full border p-1"
-    />
-  </div>
-
-  <!-- Color del borde -->
-  <div>
-    <label class="block text-sm font-semibold">Color del borde</label>
-    <input
-      type="color"
-      [value]="selectedComponent.decoration?.border?.color"
-      (input)="updateProperty('decoration.border.color', getInputValue($event))"
-      class="w-full h-8 p-0 border"
-    />
-  </div>
-
-  <!-- Grosor del borde -->
-  <div>
-    <label class="block text-sm font-semibold">Grosor del borde (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.decoration?.border?.width"
-      (input)="
-        updateProperty('decoration.border.width', getInputNumberValue($event))
-      "
-      class="w-full border p-1"
-    />
-  </div>
-
-  <!-- Radio de borde -->
-  <div>
-    <label class="block text-sm font-semibold">Radio de borde (px)</label>
-    <input
-      type="number"
-      [value]="selectedComponent.decoration?.borderRadius"
-      (input)="
-        updateProperty('decoration.borderRadius', getInputNumberValue($event))
-      "
-      class="w-full border p-1"
-    />
-  </div>
-  <!-- Alineación -->
-  <div>
-    <label class="block text-sm font-semibold">Alineación</label>
-    <select
-      class="w-full border p-1"
-      [value]="selectedComponent.alignment || ''"
-      (change)="updateProperty('alignment', getInputValue($event))"
-    >
-      <option value="">-- Sin alineación (usar top/left) --</option>
-      <option value="topLeft">Arriba izquierda</option>
-      <option value="topCenter">Arriba centro</option>
-      <option value="topRight">Arriba derecha</option>
-      <option value="centerLeft">Centro izquierda</option>
-      <option value="center">Centro</option>
-      <option value="centerRight">Centro derecha</option>
-      <option value="bottomLeft">Abajo izquierda</option>
-      <option value="bottomCenter">Abajo centro</option>
-      <option value="bottomRight">Abajo derecha</option>
-    </select>
-  </div>
-  <!-- selector de Alineación -->
-  <div>
-    <label class="block text-sm font-semibold">Layout hijos</label>
-    <select
-      class="w-full border p-1"
-      [value]="selectedComponent.childrenLayout || ''"
-      (change)="updateChildrenLayout(getInputValue($event))"
-    >
-      <option value="">— Ninguno —</option>
-      <option value="row">Fila</option>
-      <option value="column">Columna</option>
-    </select>
-  </div>
-
-  <div *ngIf="selectedComponent.childrenLayout">
-    <label class="block text-sm font-semibold">Gap entre hijos (px)</label>
-    <input
-      type="number"
-      class="w-full border p-1"
-      [value]="selectedComponent.gap || 8"
-      (input)="updateProperty('gap', getInputNumberValue($event))"
-      min="0"
-    />
-  </div>
-
-  <!-- Solo si el tipo es IconButton -->
-  <div *ngIf="selectedComponent.type === 'TextButton'" class="space-y-2">
-    <!-- Etiqueta del botón -->
-    <div>
-      <label class="block text-sm font-semibold">Texto del botón</label>
-      <input
-        type="text"
-        [value]="selectedComponent.text || ''"
-        (input)="updateProperty('text', getInputValue($event))"
-        class="w-full border p-1"
-      />
-    </div>
-
-    <!-- Estilo de texto: color y tamaño -->
-    <div class="flex gap-2">
-      <div class="flex-1">
-        <label class="block text-sm font-semibold">Color de texto</label>
-        <input
-          type="color"
-          [value]="selectedComponent.textColor"
-          (input)="updateProperty('textColor', getInputValue($event))"
-          class="w-full h-8 p-0 border"
-        />
+<div *ngIf="selectedComponent">
+  <!-- Header -->
+  <div class="sticky top-0 bg-slate-900/95 backdrop-blur-sm border-b border-slate-700/50 p-4 z-10">
+    <div class="space-y-3">
+      <!-- Info del componente -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-200">Propiedades</h2>
+          <p class="text-xs text-slate-400">{{ selectedComponent.type }}</p>
+        </div>
       </div>
-      <div class="flex-1">
-        <label class="block text-sm font-semibold">Tamaño (px)</label>
-        <input
-          type="number"
-          [value]="selectedComponent.fontSize"
-          (input)="updateProperty('fontSize', getInputNumberValue($event))"
-          class="w-full border p-1"
-          min="8"
-          max="64"
-        />
-      </div>
-    </div>
+   
+      <!-- Botones de acciones -->
+      <div class="flex items-center gap-2">
+        <!-- Código de la sala -->
+        <div class="flex items-center gap-2 px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg">
 
-    <!-- Nuevo: Tipo de letra -->
-    <div>
-      <label class="block text-sm font-semibold">Tipo de letra</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.fontFamily || ''"
-        (change)="updateProperty('fontFamily', getInputValue($event))"
-      >
-        <option value="">– Sistema predeterminado –</option>
-        <option value="Arial">Arial</option>
-        <option value="'Times New Roman'">Times New Roman</option>
-        <option value="'Courier New'">Courier New</option>
-        <option value="'Roboto'">Roboto</option>
-      </select>
-    </div>
-
-    <!-- Nuevo: Alineación de texto -->
-    <div>
-      <label class="block text-sm font-semibold">Alineación de texto</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.textAlign || 'left'"
-        (change)="updateProperty('textAlign', getInputValue($event))"
-      >
-        <option value="left">Izquierda</option>
-        <option value="center">Centro</option>
-        <option value="right">Derecha</option>
-        <option value="justify">Justificada</option>
-      </select>
-    </div>
-
-    <!-- Ruta de navegación -->
-    <div>
-      <label class="block text-sm font-semibold">Ruta de navegación</label>
-      <select
-        class="w-full border p-1"
-        [value]="selectedComponent.navigateTo || ''"
-        (change)="handleNavigateToChange($event)"
-      >
-        <option [value]="''" disabled>Seleccionar pantalla...</option>
-        <option *ngFor="let p of pages" [value]="getRutaPantalla(p.name)">
-          {{ getRutaPantalla(p.name) }}
-        </option>
-        <option value="custom">🔧 Personalizada...</option>
-      </select>
-      <div *ngIf="selectedComponent.navigateTo === 'custom'">
-        <input
-          type="text"
-          class="w-full border p-1 mt-1"
-          placeholder="/mi-ruta"
-          [(ngModel)]="pantallaCustomRoute"
-          (input)="updateProperty('navigateTo', pantallaCustomRoute)"
-        />
-      </div>
-    </div>
-  </div>
-
-  <!-- Solo si el tipo es DropdownButton -->
-  <div *ngIf="selectedComponent.type === 'DropdownButton'" class="space-y-2">
-    <h3 class="text-md font-semibold">Opciones del Dropdown</h3>
-
-    <!-- Listado actual de opciones -->
-    <ul class="list-disc list-inside mb-2">
-      <li
-        *ngFor="
-          let opt of selectedComponent.options;
-          let i = index;
-          trackBy: trackByFn
-        "
-        class="flex items-center gap-2"
-      >
-        <input
-          type="text"
-          [value]="opt"
-          (input)="onDropdownOptionInput(i, $event)"
-          class="flex-1 border px-2 py-1 rounded"
-        />
+          <span class="text-sm font-mono text-slate-300">Codigo de la sala:  {{ roomCode }}</span>
+        </div>
+        
+        <!-- Descargar proyecto -->
         <button
-          class="text-red-500 hover:text-red-700"
-          (click)="removeDropdownOption(opt)"
-          title="Eliminar opción"
+          type="button"
+          (click)="downloadAngularProject()"
+          class="p-2 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/30 hover:border-emerald-400/50 rounded-lg transition-all duration-200 hover:scale-105 group"
+          title="Descargar proyecto"
         >
-          ✖
+          <svg class="w-4 h-4 text-emerald-400 group-hover:text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
         </button>
-      </li>
-    </ul>
+        
+        <!-- Salir de la sala -->
+        <button
+          type="button"
+          (click)="leaveRoom()"
+          class="p-2 bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 hover:border-red-400/50 rounded-lg transition-all duration-200 hover:scale-105 group"
+          title="Salir de la sala"
+        >
+          <svg class="w-4 h-4 text-red-400 group-hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+   </div>
 
-    <!-- Input para agregar nueva opción -->
-    <div class="flex gap-2 items-center">
-      <input
-        type="text"
-        [(ngModel)]="dropdownNewOption"
-        placeholder="Nueva opción"
-        class="flex-1 border p-1 rounded"
-      />
-      <button
-        class="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
-        (click)="addDropdownOption()"
+  <div class="p-4 space-y-6">
+    <!-- Propiedades específicas de Text -->
+    <div *ngIf="selectedComponent.type === 'Text'" class="space-y-5">
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
       >
-        ➕
-      </button>
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4 text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h7"
+            />
+          </svg>
+          Contenido del Texto
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Texto</label
+            >
+            <textarea
+              [value]="selectedComponent.text || ''"
+              (input)="updateProperty('text', getInputValue($event))"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none"
+              rows="3"
+              placeholder="Ingresa tu texto aquí..."
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tamaño (px)</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.fontSize || 14"
+                (input)="
+                  updateProperty('fontSize', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                min="8"
+                max="100"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.textColor || '#000000'"
+                  (input)="updateProperty('textColor', getInputValue($event))"
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tipo de letra</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                [value]="selectedComponent.fontFamily || ''"
+                (change)="updateProperty('fontFamily', getInputValue($event))"
+              >
+                <option value="">Sistema</option>
+                <option value="Arial">Arial</option>
+                <option value="'Times New Roman'">Times New Roman</option>
+                <option value="'Courier New'">Courier New</option>
+                <option value="'Roboto'">Roboto</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Alineación</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                [value]="selectedComponent.textAlign || 'left'"
+                (change)="updateProperty('textAlign', getInputValue($event))"
+              >
+                <option value="left">Izquierda</option>
+                <option value="center">Centro</option>
+                <option value="right">Derecha</option>
+                <option value="justify">Justificada</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propiedades de TextButton -->
+    <div *ngIf="selectedComponent.type === 'TextButton'" class="space-y-5">
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+      >
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4 text-yellow-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+            />
+          </svg>
+          Configuración del Botón
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Texto del botón</label
+            >
+            <input
+              type="text"
+              [value]="selectedComponent.text || ''"
+              (input)="updateProperty('text', getInputValue($event))"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              placeholder="Texto del botón"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color de texto</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.textColor"
+                  (input)="updateProperty('textColor', getInputValue($event))"
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tamaño (px)</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.fontSize"
+                (input)="
+                  updateProperty('fontSize', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                min="8"
+                max="64"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tipo de letra</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                [value]="selectedComponent.fontFamily || ''"
+                (change)="updateProperty('fontFamily', getInputValue($event))"
+              >
+                <option value="">Sistema</option>
+                <option value="Arial">Arial</option>
+                <option value="'Times New Roman'">Times New Roman</option>
+                <option value="'Courier New'">Courier New</option>
+                <option value="'Roboto'">Roboto</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Alineación</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                [value]="selectedComponent.textAlign || 'left'"
+                (change)="updateProperty('textAlign', getInputValue($event))"
+              >
+                <option value="left">Izquierda</option>
+                <option value="center">Centro</option>
+                <option value="right">Derecha</option>
+                <option value="justify">Justificada</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Ruta de navegación</label
+            >
+            <select
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              [value]="selectedComponent.navigateTo || ''"
+              (change)="handleNavigateToChange($event)"
+            >
+              <option [value]="''" disabled>Seleccionar pantalla...</option>
+              <option *ngFor="let p of pages" [value]="getRutaPantalla(p.name)">
+                {{ getRutaPantalla(p.name) }}
+              </option>
+              <option value="custom">🔧 Personalizada...</option>
+            </select>
+            <div *ngIf="selectedComponent.navigateTo === 'custom'" class="mt-2">
+              <input
+                type="text"
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                placeholder="/mi-ruta"
+                [(ngModel)]="pantallaCustomRoute"
+                (input)="updateProperty('navigateTo', pantallaCustomRoute)"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propiedades de DropdownButton -->
+    <div *ngIf="selectedComponent.type === 'DropdownButton'" class="space-y-5">
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+      >
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4 text-purple-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+            />
+          </svg>
+          Opciones del Dropdown
+        </h3>
+
+        <div class="space-y-4">
+          <!-- Lista de opciones existentes -->
+          <div
+            *ngIf="
+              selectedComponent.options && selectedComponent.options.length > 0
+            "
+            class="space-y-2"
+          >
+            <label class="block text-sm font-medium text-slate-300"
+              >Opciones actuales</label
+            >
+            <div
+              *ngFor="
+                let opt of selectedComponent.options;
+                let i = index;
+                trackBy: trackByFn
+              "
+              class="flex items-center gap-2 p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg group hover:bg-slate-700/50 transition-all"
+            >
+              <div
+                class="w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"
+              ></div>
+              <input
+                type="text"
+                [value]="opt"
+                (input)="onDropdownOptionInput(i, $event)"
+                class="flex-1 px-2 py-1 bg-transparent border-none text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/20 rounded"
+                placeholder="Opción"
+              />
+              <button
+                class="p-1 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
+                (click)="removeDropdownOption(opt)"
+                title="Eliminar opción"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Agregar nueva opción -->
+          <div class="border-t border-slate-600/50 pt-4">
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Agregar nueva opción</label
+            >
+            <div class="flex gap-2">
+              <input
+                type="text"
+                [(ngModel)]="dropdownNewOption"
+                placeholder="Nueva opción"
+                class="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              />
+              <button
+                class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-all hover:scale-105 flex items-center gap-2"
+                (click)="addDropdownOption()"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+                Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propiedades de Checkbox -->
+    <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-5">
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+      >
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4 text-pink-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Configuración del Checkbox
+        </h3>
+
+        <div class="space-y-4">
+          <!-- Estado marcado -->
+          <div
+            class="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
+          >
+            <div>
+              <label class="block text-sm font-medium text-slate-300"
+                >Estado</label
+              >
+              <p class="text-xs text-slate-400">Checkbox marcado por defecto</p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                [checked]="selectedComponent.checked"
+                (change)="
+                  updateProperty('checked', $any($event.target).checked)
+                "
+                class="sr-only peer"
+              />
+              <div
+                class="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"
+              ></div>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color del check</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.checkColor || '#FF0000'"
+                  (input)="
+                    updateProperty('checkColor', $any($event.target).value)
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color de fondo</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.activeColor || '#FFFF00'"
+                  (input)="
+                    updateProperty('activeColor', $any($event.target).value)
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color del borde</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.borderColor || '#FF0000'"
+                  (input)="
+                    updateProperty('borderColor', $any($event.target).value)
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Grosor del borde</label
+              >
+              <input
+                type="number"
+                min="0"
+                max="10"
+                [value]="selectedComponent.borderWidth || 1"
+                (input)="
+                  updateProperty('borderWidth', +$any($event.target).value)
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Forma (px)</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.borderRadius"
+                (input)="
+                  updateProperty('borderRadius', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
+                min="1"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Escala</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.scale || 1"
+                (input)="updateProperty('scale', getInputNumberValue($event))"
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all"
+                min="0.1"
+                max="10"
+                step="0.1"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- Propiedades específicas de TextField -->
+<div *ngIf="selectedComponent.type === 'TextField'" class="space-y-5">
+  <div class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4">
+    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+      <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+      Configuración del Campo
+    </h3>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-2">Texto de ayuda (Hint)</label>
+        <textarea
+          [value]="selectedComponent.hintText || ''"
+          (input)="updateProperty('hintText', getInputValue($event))"
+          class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all resize-none"
+          rows="3"
+          placeholder="Ingresa el texto de ayuda aquí..."
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-300 mb-2">Tipo de campo</label>
+        <select
+          class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+          [value]="selectedComponent.inputType || 'text'"
+          (change)="updateProperty('inputType', getInputValue($event))"
+        >
+          <option value="text">📝 Texto</option>
+          <option value="email">📧 Email</option>
+          <option value="password">🔒 Contraseña</option>
+          <option value="number">🔢 Número</option>
+          <option value="tel">📞 Teléfono</option>
+        </select>
+      </div>
     </div>
   </div>
-
-  <div *ngIf="selectedComponent.type === 'Checkbox'" class="space-y-4">
-    <h2 class="text-lg font-bold">Propiedades del Checkbox</h2>
-
-    <!-- 1) Marcado (checked) -->
-    <div class="flex items-center space-x-2">
-      <label class="block text-sm font-semibold">Marcado</label>
-      <input
-        type="checkbox"
-        [checked]="selectedComponent.checked"
-        (change)="updateProperty('checked', $any($event.target).checked)"
-      />
-    </div>
-
-    <!-- 2) Color del "tick" (checkColor) -->
-    <div>
-      <label class="block text-sm font-semibold">Color del check</label>
-      <input
-        type="color"
-        [value]="selectedComponent.checkColor || '#FF0000'"
-        (input)="updateProperty('checkColor', $any($event.target).value)"
-        class="w-full h-8 p-0 border"
-      />
-    </div>
-
-    <!-- 3) Color de fondo activo (activeColor) -->
-    <div>
-      <label class="block text-sm font-semibold"
-        >Color de fondo (marcado)</label
+</div>
+    <!-- Propiedades generales de apariencia -->
+    <div
+      *ngIf="selectedComponent.type !== 'Checkbox'"
+      class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+    >
+      <h3
+        class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
       >
-      <input
-        type="color"
-        [value]="selectedComponent.activeColor || '#FFFF00'"
-        (input)="updateProperty('activeColor', $any($event.target).value)"
-        class="w-full h-8 p-0 border"
-      />
+        <svg
+          class="w-4 h-4 text-emerald-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a4 4 0 004-4V5z"
+          />
+        </svg>
+        Apariencia
+      </h3>
+
+      <div class="space-y-4">
+       
+        <!-- Color de fondo -->
+        <div *ngIf="selectedComponent.type !== 'Text'">
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >Color de fondo</label
+          >
+          <div class="relative">
+            <input
+              type="color"
+              [value]="selectedComponent.decoration?.color || '#ffffff'"
+              (input)="
+                updateProperty('decoration.color', getInputValue($event))
+              "
+              class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+            />
+            <div
+              class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Dimensiones -->
+        <div
+          *ngIf="selectedComponent.type !== 'AppBar'"
+          class="grid grid-cols-2 gap-3"
+        >
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Ancho (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.width"
+              (input)="updateProperty('width', getInputNumberValue($event))"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
+          </div>
+          <div *ngIf="selectedComponent.type !== 'TextField'">
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Alto (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.height"
+              (input)="updateProperty('height', getInputNumberValue($event))"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
+          </div>
+        </div>
+
+        <!-- Posición -->
+        <div
+          *ngIf="selectedComponent.type !== 'AppBar'"
+          class="grid grid-cols-2 gap-3"
+        >
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Top (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.top"
+              (input)="updateProperty('top', getInputNumberValue($event))"
+              [disabled]="selectedComponent.alignment"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Left (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.left"
+              (input)="updateProperty('left', getInputNumberValue($event))"
+              [disabled]="selectedComponent.alignment"
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
+        <label *ngIf="selectedComponent.type !== 'Text'" class="block text-sm font-medium text-slate-300 mb-2"
+          >Bordes</label
+        >
+        <!-- Bordes -->
+        <div *ngIf="selectedComponent.type !== 'Text'" class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Color
+            </label>
+            <div class="relative">
+              <input
+                type="color"
+                [value]="selectedComponent.decoration?.border?.color"
+                (input)="
+                  updateProperty(
+                    'decoration.border.color',
+                    getInputValue($event)
+                  )
+                "
+                class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+              />
+              <div
+                class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+              ></div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Grosor (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.decoration?.border?.width"
+              (input)="
+                updateProperty(
+                  'decoration.border.width',
+                  getInputNumberValue($event)
+                )
+              "
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Radio (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.decoration?.borderRadius"
+              (input)="
+                updateProperty(
+                  'decoration.borderRadius',
+                  getInputNumberValue($event)
+                )
+              "
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+            />
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 4) Color del borde (borderColor) -->
-    <div>
-      <label class="block text-sm font-semibold">Color del borde</label>
-      <input
-        type="color"
-        [value]="selectedComponent.borderColor || '#FF0000'"
-        (input)="updateProperty('borderColor', $any($event.target).value)"
-        class="w-full h-8 p-0 border"
-      />
+    <!-- Propiedades de alineación y layout *ngIf="selectedComponent.type !== 'Text'"  -->
+    <div
+      *ngIf="
+        selectedComponent.type !== 'Checkbox' &&
+        selectedComponent.type !== 'TextField' &&
+        selectedComponent.type !== 'Text'
+      "
+      class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+    >
+      <h3
+        class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+      >
+        <svg
+          class="w-4 h-4 text-cyan-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+          />
+        </svg>
+        Posicionamiento y Layout
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Alineación -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >Alineación</label
+          >
+          <select
+            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            [value]="selectedComponent.alignment || ''"
+            (change)="updateProperty('alignment', getInputValue($event))"
+          >
+            <option value="">Manual (usar top/left)</option>
+            <option value="topLeft">↖ Arriba izquierda</option>
+            <option value="topCenter">↑ Arriba centro</option>
+            <option value="topRight">↗ Arriba derecha</option>
+            <option value="centerLeft">← Centro izquierda</option>
+            <option value="center">⊙ Centro</option>
+            <option value="centerRight">→ Centro derecha</option>
+            <option value="bottomLeft">↙ Abajo izquierda</option>
+            <option value="bottomCenter">↓ Abajo centro</option>
+            <option value="bottomRight">↘ Abajo derecha</option>
+          </select>
+        </div>
+
+        <!-- Layout de hijos -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >Layout de hijos</label
+          >
+          <select
+            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            [value]="selectedComponent.childrenLayout || ''"
+            (change)="updateChildrenLayout(getInputValue($event))"
+          >
+            <option value="">Ninguno (posición manual)</option>
+            <option value="row">→ Fila horizontal</option>
+            <option value="column">↓ Columna vertical</option>
+          </select>
+        </div>
+
+        <!-- Gap entre hijos -->
+        <div
+          *ngIf="selectedComponent.childrenLayout"
+          class="animate-in slide-in-from-top-2 duration-200"
+        >
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >Espacio entre hijos (px)</label
+          >
+          <input
+            type="number"
+            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+            [value]="selectedComponent.gap || 8"
+            (input)="updateProperty('gap', getInputNumberValue($event))"
+            min="0"
+            placeholder="8"
+          />
+        </div>
+      </div>
     </div>
 
-    <!-- 5) Ancho del borde (borderWidth) -->
-    <div>
-      <label class="block text-sm font-semibold">Ancho del borde (px)</label>
-      <input
-        type="number"
-        min="0"
-        max="10"
-        [value]="selectedComponent.borderWidth || 1"
-        (input)="updateProperty('borderWidth', +$any($event.target).value)"
-        class="w-full border p-1"
-      />
-    </div>
+    <!-- Propiedades de Padding -->
+    <div
+      *ngIf="
+        selectedComponent.type !== 'Checkbox' &&
+        selectedComponent.type !== 'TextField' &&
+        selectedComponent.type !== 'Text'
+      "
+      class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+    >
+      <h3
+        class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+      >
+        <svg
+          class="w-4 h-4 text-orange-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 8V4a1 1 0 011-1h4m10 0h4a1 1 0 011 1v4m0 8v4a1 1 0 01-1 1h-4m-6 0H5a1 1 0 01-1-1v-4"
+          />
+        </svg>
+        Espaciado Interno (Padding)
+      </h3>
 
-    <!-- 6) Radio del borde (borderRadius) -->
-    <div>
-      <label class="block text-sm font-semibold">Forma (px)</label>
-      <input
-        type="number"
-        [value]="selectedComponent.borderRadius"
-        (input)="updateProperty('borderRadius', getInputNumberValue($event))"
-        class="w-full border p-1"
-        min="1"
-      />
-    </div>
+      <div class="space-y-4">
+        <!-- Padding uniforme -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >Padding uniforme (px)</label
+          >
+          <input
+            type="number"
+            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            [value]="selectedComponent.paddingAll || 0"
+            (input)="
+              updatePaddingProperty('paddingAll', getInputNumberValue($event))
+            "
+            min="0"
+            placeholder="Aplicar a todos los lados"
+          />
+        </div>
 
-    <!-- 7) Tamaño del checkbox (checkSize) -->
+        <!-- Separador -->
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-slate-600/50"></div>
+          </div>
+          <div class="relative flex justify-center text-xs">
+            <span class="bg-slate-800 px-2 text-slate-400"
+              >O configurar individualmente</span
+            >
+          </div>
+        </div>
 
-    <!-- 8) Escala (scale) -->
-    <div>
-      <label class="block text-sm font-semibold">Escala</label>
-      <input
-        type="number"
-        [value]="selectedComponent.scale || 1"
-        (input)="updateProperty('scale', getInputNumberValue($event))"
-        class="w-full border p-1"
-        min="0.1"
-        max="10"
-        step="0.1"
-      />
+        <!-- Padding individual -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1"
+              >Superior</label
+            >
+            <input
+              type="number"
+              class="w-full px-2 py-2 text-sm bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all"
+              [value]="selectedComponent.padding?.top || 0"
+              (input)="
+                updatePaddingProperty('top', getInputNumberValue($event))
+              "
+              min="0"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1"
+              >Derecha</label
+            >
+            <input
+              type="number"
+              class="w-full px-2 py-2 text-sm bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all"
+              [value]="selectedComponent.padding?.right || 0"
+              (input)="
+                updatePaddingProperty('right', getInputNumberValue($event))
+              "
+              min="0"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1"
+              >Inferior</label
+            >
+            <input
+              type="number"
+              class="w-full px-2 py-2 text-sm bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all"
+              [value]="selectedComponent.padding?.bottom || 0"
+              (input)="
+                updatePaddingProperty('bottom', getInputNumberValue($event))
+              "
+              min="0"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1"
+              >Izquierda</label
+            >
+            <input
+              type="number"
+              class="w-full px-2 py-2 text-sm bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all"
+              [value]="selectedComponent.padding?.left || 0"
+              (input)="
+                updatePaddingProperty('left', getInputNumberValue($event))
+              "
+              min="0"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Controles de Padding -->
-  <div *ngIf="selectedComponent">
-    <label class="block text-sm font-semibold mt-2">Padding (px)</label>
-
-    <!-- Opción 1: Padding uniforme -->
-    <div class="mb-2">
-      <label class="block text-xs">Uniforme</label>
-      <input
-        type="number"
-        class="w-full border p-1"
-        [value]="selectedComponent.paddingAll || 0"
-        (input)="
-          updatePaddingProperty('paddingAll', getInputNumberValue($event))
-        "
-        min="0"
-        placeholder="Padding uniforme"
-      />
+<!-- Estado sin componente seleccionado -->
+<div
+  *ngIf="!selectedComponent"
+  class="h-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-8"
+>
+  <div class="text-center space-y-4">
+    <div
+      class="w-16 h-16 bg-slate-700/50 rounded-2xl flex items-center justify-center mx-auto"
+    >
+      <svg
+        class="w-8 h-8 text-slate-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+        />
+      </svg>
     </div>
-
-    <!-- Opción 2: Padding individual -->
-    <div class="grid grid-cols-2 gap-1">
-      <div>
-        <label class="block text-xs">Superior</label>
-        <input
-          type="number"
-          class="w-full border p-1 text-xs"
-          [value]="selectedComponent.padding?.top || 0"
-          (input)="updatePaddingProperty('top', getInputNumberValue($event))"
-          min="0"
-        />
-      </div>
-      <div>
-        <label class="block text-xs">Derecha</label>
-        <input
-          type="number"
-          class="w-full border p-1 text-xs"
-          [value]="selectedComponent.padding?.right || 0"
-          (input)="updatePaddingProperty('right', getInputNumberValue($event))"
-          min="0"
-        />
-      </div>
-      <div>
-        <label class="block text-xs">Inferior</label>
-        <input
-          type="number"
-          class="w-full border p-1 text-xs"
-          [value]="selectedComponent.padding?.bottom || 0"
-          (input)="updatePaddingProperty('bottom', getInputNumberValue($event))"
-          min="0"
-        />
-      </div>
-      <div>
-        <label class="block text-xs">Izquierda</label>
-        <input
-          type="number"
-          class="w-full border p-1 text-xs"
-          [value]="selectedComponent.padding?.left || 0"
-          (input)="updatePaddingProperty('left', getInputNumberValue($event))"
-          min="0"
-        />
-      </div>
+    <div>
+      <h3 class="text-lg font-semibold text-slate-300 mb-2">Sin selección</h3>
+      <p class="text-sm text-slate-400 max-w-sm">
+        Selecciona un componente en el canvas para ver y editar sus propiedades
+      </p>
+    </div>
+    <div class="flex items-center justify-center gap-2 text-xs text-slate-500">
+      <div class="w-1 h-1 bg-slate-500 rounded-full animate-pulse"></div>
+      <span>Haz clic en cualquier elemento</span>
+      <div
+        class="w-1 h-1 bg-slate-500 rounded-full animate-pulse [animation-delay:0.5s]"
+      ></div>
     </div>
   </div>
 </div>

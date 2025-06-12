@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms'; // Importa FormsModule para habilitar ngModel
 import { ApiService } from '../../services/api.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule,CommonModule],
   providers: [ApiService], // Añadir FormsModule aquí
   templateUrl: './welcome.component.html',
 })
