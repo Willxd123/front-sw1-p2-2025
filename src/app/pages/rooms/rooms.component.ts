@@ -19,6 +19,7 @@ import { Page } from '../../interface/pantallas.interfaces';
 import { DragState } from '../../interface/dragstate.interface';
 import { ComponentDimensions } from '../../interface/dimencion.interface';
 import { ContextMenu } from '../../interface/context-menu.interface';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-rooms',
@@ -58,6 +59,14 @@ export class RoomsComponent implements OnInit {
     initialLeft: 0,
     initialTop: 0,
   };
+
+  // AI Assistant properties
+showAIHub: boolean = false;
+showTextModal: boolean = false;
+showImageModal: boolean = false;
+questionText: string = '';
+selectedImage: File | null = null;
+
   //instancias
   pantallaCustomRoute: string = '';
 
@@ -78,7 +87,8 @@ export class RoomsComponent implements OnInit {
     private route: ActivatedRoute,
     private socketService: SokectSevice,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {}
   roomCode: string = '';
   roomName: string = '';
@@ -105,6 +115,23 @@ export class RoomsComponent implements OnInit {
 
       this.cdr.detectChanges();
     });
+
+// Escuchar cuando se limpia una página
+this.socketService.onPageCleared().subscribe(({ pageId }) => {
+  const page = this.pages.find((p) => p.id === pageId);
+  if (page) {
+    // Limpiar componentes de la página
+    page.components = [];
+    
+    // Si es la página actual, deseleccionar componente
+    if (page.id === this.pages[this.currentPantalla]?.id) {
+      this.selectedComponent = null;
+    }
+    
+    console.log(`🧹 Página limpiada: ${page.name}`);
+    this.cdr.detectChanges();
+  }
+});
 
     // Escucha nuevas páginas agregadas por otros usuarios
     this.socketService.onPageAdded().subscribe((page: Page) => {
@@ -1161,5 +1188,107 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
 
   cargarJsonEjemploLocal() {
     this.widgets.cargarJsonEjemploLocal();
+  }
+
+
+  //metodos auxiliares para la ia
+  openTextPrompt(): void {
+    this.showAIHub = false;
+    this.showTextModal = true;
+  }
+  
+  openImageUpload(): void {
+    this.showAIHub = false;
+    this.showImageModal = true;
+  }
+  
+  closeTextModal(): void {
+    this.showTextModal = false;
+    this.questionText = '';
+  }
+  
+  closeImageModal(): void {
+    this.showImageModal = false;
+    this.selectedImage = null;
+  }
+  
+  onImageSelect(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedImage = file;
+    }
+  }
+  
+  generateFromText(): void {
+    if (!this.questionText.trim()) return;
+    
+    this.makeHttpRequest();
+    this.closeTextModal();
+  }
+  
+  generateFromImage(): void {
+    if (!this.selectedImage) return;
+    
+    // Tu futura implementación para imágenes
+    const formData = new FormData();
+    formData.append('image', this.selectedImage);
+    
+    // Por ahora, solo cerramos el modal
+    this.closeImageModal();
+    
+    // Aquí irá tu lógica de imagen cuando esté lista
+    console.log('Imagen seleccionada para procesar:', this.selectedImage.name);
+  }
+  showResponseModal = false;
+  httpResponse: any;
+
+  showQuestionModal = false;
+
+  makeHttpRequest() {
+    const body = { question: this.questionText };
+    this.http.post('http://localhost:5000/query', body).subscribe({
+      next: (response: any) => {
+        try {
+          // Parsear la respuesta y asignarla a jsonEjemplo
+          const components = JSON.parse(response.response);
+          
+          // Obtener el ID de la página actual
+          const pageId = this.pages[this.currentPantalla].id;
+          
+          // 🧹 PASO 1: Limpiar la pantalla actual usando socket service
+          this.socketService.clearPage(this.roomCode, pageId);
+          
+          // 🎯 PASO 2: Agregar nuevos componentes después de un pequeño delay
+          // para asegurar que la limpieza se complete primero
+          setTimeout(() => {
+            components.forEach((component: any, index: number) => {
+              // Generar nuevo ID para evitar conflictos
+              const componentWithNewId = {
+                ...component,
+                id: uuidv4()
+              };
+              
+              // Agregar con un pequeño delay para evitar conflictos
+              setTimeout(() => {
+                this.socketService.addCanvasComponent(this.roomCode, pageId, componentWithNewId);
+              }, index * 100); // 100ms entre cada componente
+            });
+          }, 200); // 200ms de delay inicial para que la limpieza se complete
+          
+          this.showResponseModal = true;
+          this.httpResponse = `Diseño cargado exitosamente - ${components.length} componentes agregados`;
+          console.log('🤖 Componentes de IA cargados:', components.length, 'elementos');
+          console.log('🧹 Pantalla limpiada y nuevos componentes agregados');
+          
+        } catch (error) {
+          this.httpResponse = "Error al procesar la respuesta: " + error;
+          this.showResponseModal = true;
+        }
+      },
+      error: (error) => {
+        this.httpResponse = error;
+        this.showResponseModal = true;
+      }
+    });
   }
 }

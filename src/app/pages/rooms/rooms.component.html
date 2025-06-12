@@ -2,7 +2,7 @@
   <!-- Columna izquierda: agregar widgets -->
   <app-widgets
     *ngIf="!isPreviewMode"
-    class="w-1/5 bg-gray-100 p-4 border-r border-gray-300 flex flex-col overflow-auto"
+    class="w-1/5 bg-slate-900/95 border-r border-gray-300 flex flex-col overflow-auto"
     [isPreviewMode]="isPreviewMode"
     [pages]="pages"
     [currentPantalla]="currentPantalla"
@@ -15,397 +15,789 @@
 
   <!-- Canvas central: simulación de pantalla móvil -->
   <main
-    class="flex-1 flex justify-center items-center bg-white pt-20 overflow-auto"
+    class="flex-1 flex justify-center items-center bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 pt-20 overflow-auto relative"
     [ngClass]="{ 'w-full': isPreviewMode, 'w-3/5': !isPreviewMode }"
   >
-    <div
-      #canvas
-      class="relative bg-gray-100 border border-black shadow-lg origin-top"
-      [ngClass]="{
-        'scale-100': isPreviewMode,
-        'scale-[0.75] mt-44': !isPreviewMode
-      }"
-      [ngStyle]="{ width: '360px', height: '812px' }"
-      (mousemove)="!isPreviewMode && onMouseMove($event)"
-      (mouseup)="!isPreviewMode && onMouseUp($event)"
-      (contextmenu)="onRightClick($event, null)"
-    >
-      <!-- Renderizado recursivo -->
-      <ng-container
-        *ngFor="
-          let comp of pages[
-            isPreviewMode ? previewPantallaIndex : currentPantalla
-          ].components
-        "
-      >
-        <ng-container
-          *ngTemplateOutlet="renderComponent; context: { comp: comp }"
-        ></ng-container>
-      </ng-container>
-
-      <!-- Menú contextual -->
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-5">
       <div
-        *ngIf="contextMenu.visible"
-        id="context-menu"
-        [style.left.px]="contextMenu.x"
-        [style.top.px]="contextMenu.y"
-        class="absolute bg-white border rounded shadow z-[1000] min-w-[180px]"
+        class="absolute inset-0"
+        style="
+          background-image: radial-gradient(
+            circle at 2px 2px,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 0
+          );
+          background-size: 20px 20px;
+        "
+      ></div>
+    </div>
+
+    <!-- Phone Container -->
+    <div class="relative">
+      <!-- Phone Shadow -->
+      <div
+        class="absolute -inset-8 bg-gradient-to-b from-black/20 via-black/10 to-transparent rounded-[3rem] blur-xl opacity-60 transform rotate-1"
+      ></div>
+
+      <!-- Phone Frame -->
+      <div
+        class="relative bg-gradient-to-b from-slate-800 via-slate-900 to-black rounded-[3rem] p-2 shadow-2xl transform transition-all duration-300"
+        [ngClass]="{
+          'scale-100': isPreviewMode,
+          'scale-[0.85]': !isPreviewMode
+        }"
       >
-        <ng-container *ngIf="contextMenu.targetId; else pasteOnlyMenu">
-          <button
-            (click)="addChild(contextMenu.targetId!)"
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+        <!-- Phone Bezel -->
+        <div class="bg-black rounded-[2.5rem] p-1">
+          <!-- Screen Container -->
+          <div
+            #canvas
+            class="relative bg-white rounded-[2rem] overflow-hidden shadow-inner border border-slate-200"
+            [ngStyle]="{ width: '360px', height: '812px' }"
+            (mousemove)="!isPreviewMode && onMouseMove($event)"
+            (mouseup)="!isPreviewMode && onMouseUp($event)"
+            (contextmenu)="onRightClick($event, null)"
           >
-            ➕ Agregar hijo
-          </button>
-          <button
-            (click)="addTextChild(contextMenu.targetId!)"
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-          >
-            🔤 Agregar Text hijo
-          </button>
-
-          <button
-            (click)="
-              copyComponent(
-                findComponentById(
-                  pages[currentPantalla].components,
-                  contextMenu.targetId!
-                )!
-              )
-            "
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-          >
-            📄 Copiar
-          </button>
-          <button
-            (click)="
-              cutComponent(
-                findComponentById(
-                  pages[currentPantalla].components,
-                  contextMenu.targetId!
-                )!
-              )
-            "
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-          >
-            ✂️ Cortar
-          </button>
-          <button
-            (click)="pasteComponent(contextMenu.targetId!)"
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-            [disabled]="!copiedComponent"
-          >
-            📋 Pegar dentro
-          </button>
-          <button
-            (click)="removeComponent(contextMenu.targetId!)"
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left text-red-600"
-          >
-            🗑️ Eliminar
-          </button>
-        </ng-container>
-
-        <ng-template #pasteOnlyMenu>
-          <button
-            (click)="pasteComponent(null)"
-            class="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-            [disabled]="!copiedComponent"
-          >
-            📋 Pegar aquí
-          </button>
-        </ng-template>
-      </div>
-
-      <!-- Template recursivo -->
-      <ng-template #renderComponent let-comp="comp">
-        <div
-          [class.absolute]="!hasParentLayout(comp)"
-          [class.cursor-move]="!isPreviewMode || comp.type !== 'TextField'"
-          [ngStyle]="getComponentStyle(comp)"
-          (click)="!isPreviewMode && selectComponent(comp, $event)"
-          (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-          (click)="
-            isPreviewMode && comp.type === 'IconButton' && comp.navigateTo
-              ? goToPantalla(comp.navigateTo)
-              : null
-          "
-          (contextmenu)="onRightClick($event, comp); $event.stopPropagation()"
-        >
-          <ng-container [ngSwitch]="comp.type">
-            <!-- Renderizar TextButton -->
-            <ng-container *ngSwitchCase="'TextButton'">
-              <button
-                class="w-full h-full flex items-center justify-center cursor-pointer"
-                [ngStyle]="{
-                  'background-color': comp.decoration?.color,
-                  border: (comp.decoration?.border.width || 0) + 'px solid ' +
-                          (comp.decoration?.border.color || '#000'),
-                  'border-radius': (comp.decoration?.borderRadius || 0) + 'px',
-                  'font-size.px': comp.fontSize+6,
-                  color: comp.textColor,
-                  'font-family': comp.fontFamily,
-                  'text-align': comp.textAlign,
-                  'line-height': '0.9',  
-                }"
-                (click)="
-                  !isPreviewMode
-                    ? selectComponent(comp, $event)
-                    : comp.navigateTo
-                    ? goToPantalla(comp.navigateTo)
-                    : null
-                "
-              >
-                {{ comp.text }}
-              </button>
-            </ng-container>
-
-            <!-- Renderizar TEXT -->
+            <!-- Screen Notch -->
             <div
-              *ngSwitchCase="'Text'"
-              class="w-full h-full flex items-start justify-center overflow-hidden"
+              class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-50 flex items-center justify-center"
             >
-              <!-- Remover los estilos del span que sobrescriben getComponentStyle -->
-              <span
-                [ngStyle]="{
-                  'font-size.px': comp.fontSize+1 ,
-                  color: comp.textColor || '#000000',
-                  'font-family': comp.fontFamily  || 'inherit',
-                  'white-space': 'pre-wrap',
-                  'text-align': comp.textAlign || 'left',
-                  'line-height': '1.4',
-                  
-                }"
-                class="select-text"
-                (click)="selectComponent(comp, $event)"
-                (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-                >{{ comp.text }}</span
-              >
+              <div class="w-12 h-1 bg-slate-800 rounded-full opacity-50"></div>
             </div>
-            <!------------------------------------------------------------- -->
-            <!-- NUEVO: Renderizar DropdownButton -->
-            <ng-container *ngSwitchCase="'DropdownButton'">
-              <!-- Modo PREVIEW: desplegable real -->
 
-              <ng-container *ngIf="isPreviewMode; else editDropdown">
-                <div class="w-full h-full relative">
-                  <select
-                    class="w-full h-full absolute inset-0"
-                    [ngStyle]="{
-                      'background-color': 'transparent',
-                      border: 'none',
-                      padding: '0 0.5rem',
-                      'font-size': '1rem',
-                      color: '#000',
-                      'z-index': '10'
-                    }"
-                    [(ngModel)]="comp.selectedOption"
-                    (ngModelChange)="propiedades.onDropdownChange(comp, $event)"
-                    (mousedown)="$event.stopPropagation()"
-                    (click)="$event.stopPropagation()"
-                  >
-                    <option *ngFor="let opt of comp.options" [value]="opt">
-                      {{ opt }}
-                    </option>
-                  </select>
-                </div>
-              </ng-container>
-
-              <!-- Modo EDICIÓN: sólo muestra texto, deja pasar clicks al padre -->
-              <ng-template #editDropdown>
-                <div
-                  class="w-full h-full flex items-center justify-center text-sm text-gray-800"
+            <!-- Status Bar -->
+            <div
+              class="absolute top-0 left-0 right-0 h-12 bg-gradient-to-b from-black/5 to-transparent z-40 flex items-center justify-between px-6 pt-8"
+            >
+              <div class="flex items-center gap-1">
+                <div class="w-1 h-1 bg-slate-800 rounded-full"></div>
+                <div class="w-1 h-1 bg-slate-800 rounded-full"></div>
+                <div class="w-1 h-1 bg-slate-800 rounded-full"></div>
+                <div class="w-1 h-1 bg-slate-600 rounded-full"></div>
+                <div class="w-1 h-1 bg-slate-400 rounded-full"></div>
+                <span class="text-xs font-medium text-slate-800 ml-1"
+                  >Carrier</span
                 >
-                  {{ comp.selectedOption }}
-                </div>
-              </ng-template>
-            </ng-container>
-            <!------------------------------------------------------------- -->
-            <!-- Render genérico por defecto (otros tipos) -->
-            <!-- renderizado para checkbox -->
-            <ng-container *ngSwitchCase="'Checkbox'">
-              <!-- Contenedor principal del checkbox -->
-              <div
-                class="flex w-full h-full items-center justify-center"
-                [ngStyle]="{
-                  'background-color': 'transparent'
-                }"
-              >
-                <!-- El checkbox visual - USA EL TAMAÑO ESCALADO DIRECTAMENTE -->
-                <div
-                  class="relative flex items-center justify-center cursor-pointer flex-shrink-0"
-                  [ngStyle]="{
-                    'width.px': (comp.checkSize || 24) * (comp.scale || 1),
-                    'height.px': (comp.checkSize || 24) * (comp.scale || 1),
-                    'background-color': comp.checked
-                      ? comp.activeColor || '#FFFF00'
-                      : '#ffffff',
-
-                    border:
-                      (comp.borderWidth + 6 || 1) +
-                      'px solid ' +
-                      (comp.borderColor || comp.checkColor || '#FF0000'),
-                    'border-radius':
-                      comp.borderRadius === 50
-                        ? '50%'
-                        : (comp.borderRadius || 4) + 'px'
-                  }"
-                  (click)="
-                    isPreviewMode && propiedades.simulateCheckboxClick(comp, $event);
-                    $event.stopPropagation()
-                  "
+              </div>
+              <div class="text-xs font-medium text-slate-800">9:41</div>
+              <div class="flex items-center gap-1">
+                <svg
+                  class="w-3 h-3 text-slate-800"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <!-- El "tick" o check - ESCALADO PROPORCIONALMENTE -->
-                  <div
-                    *ngIf="comp.checked"
-                    class="flex items-center justify-center pointer-events-none"
-                    [ngStyle]="{
-                      color: comp.checkColor || '#FF0000',
-                      'font-size.px':
-                        (comp.checkSize || 24) * (comp.scale || 1) * 0.6,
-                      'font-weight': 'bold',
-                      'line-height': '1'
-                    }"
-                  >
-                    ✓
-                  </div>
+                  <path d="M2 17h20v2H2zm0-4h20v2H2zm0-4h20v2H2z" />
+                </svg>
+                <svg
+                  class="w-3 h-3 text-slate-800"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"
+                  />
+                </svg>
+                <div class="w-5 h-3 border border-slate-800 rounded-sm">
+                  <div class="w-3 h-1.5 bg-green-500 rounded-xs m-0.5"></div>
                 </div>
               </div>
-            </ng-container>
-            <!-- renderizado para el TextField -->
-            <ng-container *ngSwitchCase="'TextField'">
-              <!-- MODO PREVISUALIZACIÓN: Input funcional (escribible, no se guarda) -->
-              <ng-container *ngIf="isPreviewMode; else editTextField">
-                <input
-                  class="w-full h-full outline-none"
-                  [type]="comp.inputType || 'text'"
-                  [placeholder]="comp.hintText || 'Ingresa texto aquí'"
-                  [disabled]="comp.enabled === false"
-                  [maxLength]="comp.maxLength"
-                  [value]="getTextFieldPreviewValue(comp.id)"
-                  (input)="setTextFieldPreviewValue(comp.id, $event)"
-                  [ngStyle]="{
-                    'background-color': comp.decoration?.color || '#ffffff',
-                    border:
-                      (comp.decoration?.border?.width || 1) +
-                      'px solid ' +
-                      (comp.decoration?.border?.color || '#e0e0e0'),
-                    'border-radius':
-                      (comp.decoration?.borderRadius || 4) + 'px',
-                    'padding-top': comp.labelText ? '20px' : '12px',
-                    'padding-bottom': '12px',
-                    'padding-left': '12px',
-                    'padding-right': '12px',
-                    'font-size': (comp.fontSize || 16) + 'px',
-                    color: comp.inputTextColor || '#212121',
-                    'font-family': comp.fontFamily || 'inherit',
-                    cursor: 'text'
-                  }"
-                  (click)="$event.stopPropagation()"
-                  (mousedown)="$event.stopPropagation()"
-                  (focus)="$event.stopPropagation()"
-                />
-              </ng-container>
+            </div>
 
-              <!-- MODO EDICIÓN: Solo muestra el diseño, no es editable -->
-              <ng-template #editTextField>
-                <div
-                  class="w-full h-full flex items-center justify-start cursor-pointer"
-                  [ngStyle]="{
-                    'background-color': comp.decoration?.color || '#ffffff',
-                    border:
-                      (comp.decoration?.border?.width || 1) +
-                      'px solid ' +
-                      (comp.decoration?.border?.color || '#e0e0e0'),
-                    'border-radius':
-                      (comp.decoration?.borderRadius || 4) + 'px',
-                    'padding-top': comp.labelText ? '20px' : '12px',
-                    'padding-bottom': '12px',
-                    'padding-left': '12px',
-                    'padding-right': '12px',
-                    'font-size': (comp.fontSize || 16) + 'px',
-                    color: comp.hintColor || '#9e9e9e',
-                    'font-family': comp.fontFamily || 'inherit'
-                  }"
-                  (click)="selectComponent(comp, $event)"
-                  (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
-                >
-                  <!-- Mostrar valor actual o placeholder en modo edición -->
-                  {{ comp.hintText || "TextField" }}
-                </div>
-              </ng-template>
-            </ng-container>
-          </ng-container>
-
-          <!-- Render hijos recursivamente -->
-          <!-- Si el padre tiene childrenLayout, usamos flex -->
-          <!-- Si el padre tiene childrenLayout, usamos flex con alineación completa -->
-          <ng-container *ngIf="comp.childrenLayout; else defaultChildren">
-            <div
-              [ngStyle]="{
-                display: 'flex',
-                'flex-direction': comp.childrenLayout,
-                'gap.px': comp.gap || 8,
-                'justify-content': getFlexJustifyContent(comp),
-                'align-items': getFlexAlignItems(comp),
-                width: '100%',
-                height: '100%',
-                'padding-top.px': comp.padding?.top || comp.paddingAll || 0,
-                'padding-right.px': comp.padding?.right || comp.paddingAll || 0,
-                'padding-bottom.px':
-                  comp.padding?.bottom || comp.paddingAll || 0,
-                'padding-left.px': comp.padding?.left || comp.paddingAll || 0,
-                'box-sizing': 'border-box'
-              }"
-            >
-              <!-- Renderizar solo hijos que NO sean Text en el flujo flex -->
+            <!-- Main Content Area -->
+            <div class="relative w-full h-full pt-12">
+              <!-- Renderizado recursivo -->
               <ng-container
-                *ngFor="let child of getFlexChildren(comp.children)"
+                *ngFor="
+                  let comp of pages[
+                    isPreviewMode ? previewPantallaIndex : currentPantalla
+                  ].components
+                "
               >
                 <ng-container
-                  *ngTemplateOutlet="renderComponent; context: { comp: child }"
+                  *ngTemplateOutlet="renderComponent; context: { comp: comp }"
                 ></ng-container>
               </ng-container>
             </div>
 
-            <!-- Renderizar elementos Text por separado (fuera del flujo flex) -->
-            <ng-container
-              *ngFor="let textChild of getTextChildren(comp.children)"
-            >
-              <ng-container
-                *ngTemplateOutlet="
-                  renderComponent;
-                  context: { comp: textChild }
-                "
-              ></ng-container>
-            </ng-container>
-          </ng-container>
+            <!-- Home Indicator -->
+            <div
+              class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-slate-800 rounded-full opacity-30"
+            ></div>
 
-          <!-- Si no, volvemos al comportamiento original -->
-          <ng-template #defaultChildren>
-            <ng-container *ngFor="let child of comp.children">
-              <ng-container
-                *ngTemplateOutlet="renderComponent; context: { comp: child }"
-              ></ng-container>
-            </ng-container>
-          </ng-template>
+            <!-- Menú contextual mejorado -->
+            <div
+              *ngIf="contextMenu.visible"
+              id="context-menu"
+              [style.left.px]="contextMenu.x"
+              [style.top.px]="contextMenu.y"
+              class="absolute bg-white/95 backdrop-blur border border-slate-200 rounded-xl shadow-2xl z-[1000] min-w-[200px] overflow-hidden"
+            >
+              <ng-container *ngIf="contextMenu.targetId; else pasteOnlyMenu">
+                <button
+                  (click)="addChild(contextMenu.targetId!)"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 w-full text-left text-slate-700 hover:text-blue-700 transition-colors border-b border-slate-100 last:border-0"
+                >
+                  <div
+                    class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center"
+                  >
+                    <span class="text-sm">➕</span>
+                  </div>
+                  <span class="font-medium">Agregar hijo</span>
+                </button>
+                <button
+                  (click)="addTextChild(contextMenu.targetId!)"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 w-full text-left text-slate-700 hover:text-indigo-700 transition-colors border-b border-slate-100 last:border-0"
+                >
+                  <div
+                    class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center"
+                  >
+                    <span class="text-sm">🔤</span>
+                  </div>
+                  <span class="font-medium">Agregar texto</span>
+                </button>
+                <button
+                  (click)="
+                    copyComponent(
+                      findComponentById(
+                        pages[currentPantalla].components,
+                        contextMenu.targetId!
+                      )!
+                    )
+                  "
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-emerald-50 w-full text-left text-slate-700 hover:text-emerald-700 transition-colors border-b border-slate-100 last:border-0"
+                >
+                  <div
+                    class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center"
+                  >
+                    <span class="text-sm">📄</span>
+                  </div>
+                  <span class="font-medium">Copiar</span>
+                </button>
+                <button
+                  (click)="
+                    cutComponent(
+                      findComponentById(
+                        pages[currentPantalla].components,
+                        contextMenu.targetId!
+                      )!
+                    )
+                  "
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-orange-50 w-full text-left text-slate-700 hover:text-orange-700 transition-colors border-b border-slate-100 last:border-0"
+                >
+                  <div
+                    class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center"
+                  >
+                    <span class="text-sm">✂️</span>
+                  </div>
+                  <span class="font-medium">Cortar</span>
+                </button>
+                <button
+                  (click)="pasteComponent(contextMenu.targetId!)"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 w-full text-left transition-colors border-b border-slate-100 last:border-0"
+                  [ngClass]="
+                    !copiedComponent
+                      ? 'text-slate-400 cursor-not-allowed'
+                      : 'text-slate-700 hover:text-purple-700'
+                  "
+                  [disabled]="!copiedComponent"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    [ngClass]="
+                      !copiedComponent ? 'bg-slate-100' : 'bg-purple-100'
+                    "
+                  >
+                    <span class="text-sm">📋</span>
+                  </div>
+                  <span class="font-medium">Pegar dentro</span>
+                </button>
+                <button
+                  (click)="removeComponent(contextMenu.targetId!)"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 w-full text-left text-slate-700 hover:text-red-700 transition-colors"
+                >
+                  <div
+                    class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center"
+                  >
+                    <span class="text-sm">🗑️</span>
+                  </div>
+                  <span class="font-medium">Eliminar</span>
+                </button>
+              </ng-container>
+
+              <ng-template #pasteOnlyMenu>
+                <button
+                  (click)="pasteComponent(null)"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 w-full text-left transition-colors"
+                  [ngClass]="
+                    !copiedComponent
+                      ? 'text-slate-400 cursor-not-allowed'
+                      : 'text-slate-700 hover:text-purple-700'
+                  "
+                  [disabled]="!copiedComponent"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg flex items-center justify-center"
+                    [ngClass]="
+                      !copiedComponent ? 'bg-slate-100' : 'bg-purple-100'
+                    "
+                  >
+                    <span class="text-sm">📋</span>
+                  </div>
+                  <span class="font-medium">Pegar aquí</span>
+                </button>
+              </ng-template>
+            </div>
+
+            <!-- Template recursivo (manteniendo la lógica original) -->
+            <ng-template #renderComponent let-comp="comp">
+              <div
+                [class.absolute]="!hasParentLayout(comp)"
+                [class.cursor-move]="
+                  !isPreviewMode || comp.type !== 'TextField'
+                "
+                [ngStyle]="getComponentStyle(comp)"
+                (click)="!isPreviewMode && selectComponent(comp, $event)"
+                (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
+                (click)="
+                  isPreviewMode && comp.type === 'IconButton' && comp.navigateTo
+                    ? goToPantalla(comp.navigateTo)
+                    : null
+                "
+                (contextmenu)="
+                  onRightClick($event, comp); $event.stopPropagation()
+                "
+              >
+                <ng-container [ngSwitch]="comp.type">
+                  <!-- Renderizar TextButton -->
+                  <ng-container *ngSwitchCase="'TextButton'">
+                    <button
+                      class="w-full h-full flex items-center justify-center cursor-pointer"
+                      [ngStyle]="{
+                        'background-color': comp.decoration?.color,
+                        border:
+                          (comp.decoration?.border.width || 0) +
+                          'px solid ' +
+                          (comp.decoration?.border.color || '#000'),
+                        'border-radius':
+                          (comp.decoration?.borderRadius || 0) + 'px',
+                        'font-size.px': comp.fontSize + 6,
+                        color: comp.textColor,
+                        'font-family': comp.fontFamily,
+                        'text-align': comp.textAlign,
+                        'line-height': '0.9'
+                      }"
+                      (click)="
+                        !isPreviewMode
+                          ? selectComponent(comp, $event)
+                          : comp.navigateTo
+                          ? goToPantalla(comp.navigateTo)
+                          : null
+                      "
+                    >
+                      {{ comp.text }}
+                    </button>
+                  </ng-container>
+
+                  <!-- Renderizar TEXT -->
+                  <div
+                    *ngSwitchCase="'Text'"
+                    class="w-full h-full flex items-start justify-center overflow-hidden"
+                  >
+                    <span
+                      [ngStyle]="{
+                        'font-size.px': comp.fontSize + 1,
+                        color: comp.textColor || '#000000',
+                        'font-family': comp.fontFamily || 'inherit',
+                        'white-space': 'pre-wrap',
+                        'text-align': comp.textAlign || 'left',
+                        'line-height': '1.4'
+                      }"
+                      class="select-text"
+                      (click)="selectComponent(comp, $event)"
+                      (mousedown)="!isPreviewMode && onMouseDown($event, comp)"
+                      >{{ comp.text }}</span
+                    >
+                  </div>
+
+                  <!-- NUEVO: Renderizar DropdownButton -->
+                  <ng-container *ngSwitchCase="'DropdownButton'">
+                    <ng-container *ngIf="isPreviewMode; else editDropdown">
+                      <div class="w-full h-full relative">
+                        <select
+                          class="w-full h-full absolute inset-0"
+                          [ngStyle]="{
+                            'background-color': 'transparent',
+                            border: 'none',
+                            padding: '0 0.5rem',
+                            'font-size': '1rem',
+                            color: '#000',
+                            'z-index': '10'
+                          }"
+                          [(ngModel)]="comp.selectedOption"
+                          (ngModelChange)="
+                            propiedades.onDropdownChange(comp, $event)
+                          "
+                          (mousedown)="$event.stopPropagation()"
+                          (click)="$event.stopPropagation()"
+                        >
+                          <option
+                            *ngFor="let opt of comp.options"
+                            [value]="opt"
+                          >
+                            {{ opt }}
+                          </option>
+                        </select>
+                      </div>
+                    </ng-container>
+
+                    <ng-template #editDropdown>
+                      <div
+                        class="w-full h-full flex items-center justify-center text-sm text-gray-800"
+                      >
+                        {{ comp.selectedOption }}
+                      </div>
+                    </ng-template>
+                  </ng-container>
+
+                  <!-- renderizado para checkbox -->
+                  <ng-container *ngSwitchCase="'Checkbox'">
+                    <div
+                      class="flex w-full h-full items-center justify-center"
+                      [ngStyle]="{
+                        'background-color': 'transparent'
+                      }"
+                    >
+                      <div
+                        class="relative flex items-center justify-center cursor-pointer flex-shrink-0"
+                        [ngStyle]="{
+                          'width.px':
+                            (comp.checkSize || 24) * (comp.scale || 1),
+                          'height.px':
+                            (comp.checkSize || 24) * (comp.scale || 1),
+                          'background-color': comp.checked
+                            ? comp.activeColor || '#FFFF00'
+                            : '#ffffff',
+                          border:
+                            (comp.borderWidth + 6 || 1) +
+                            'px solid ' +
+                            (comp.borderColor || comp.checkColor || '#FF0000'),
+                          'border-radius':
+                            comp.borderRadius === 50
+                              ? '50%'
+                              : (comp.borderRadius || 4) + 'px'
+                        }"
+                        (click)="
+                          isPreviewMode &&
+                            propiedades.simulateCheckboxClick(comp, $event);
+                          $event.stopPropagation()
+                        "
+                      >
+                        <div
+                          *ngIf="comp.checked"
+                          class="flex items-center justify-center pointer-events-none"
+                          [ngStyle]="{
+                            color: comp.checkColor || '#FF0000',
+                            'font-size.px':
+                              (comp.checkSize || 24) * (comp.scale || 1) * 0.6,
+                            'font-weight': 'bold',
+                            'line-height': '1'
+                          }"
+                        >
+                          ✓
+                        </div>
+                      </div>
+                    </div>
+                  </ng-container>
+
+                  <!-- renderizado para el TextField -->
+                  <ng-container *ngSwitchCase="'TextField'">
+                    <ng-container *ngIf="isPreviewMode; else editTextField">
+                      <input
+                        class="w-full h-full outline-none"
+                        [type]="comp.inputType || 'text'"
+                        [placeholder]="comp.hintText || 'Ingresa texto aquí'"
+                        [disabled]="comp.enabled === false"
+                        [maxLength]="comp.maxLength"
+                        [value]="getTextFieldPreviewValue(comp.id)"
+                        (input)="setTextFieldPreviewValue(comp.id, $event)"
+                        [ngStyle]="{
+                          'background-color':
+                            comp.decoration?.color || '#ffffff',
+                          border:
+                            (comp.decoration?.border?.width || 1) +
+                            'px solid ' +
+                            (comp.decoration?.border?.color || '#e0e0e0'),
+                          'border-radius':
+                            (comp.decoration?.borderRadius || 4) + 'px',
+                          'padding-top': comp.labelText ? '20px' : '12px',
+                          'padding-bottom': '12px',
+                          'padding-left': '12px',
+                          'padding-right': '12px',
+                          'font-size': (comp.fontSize || 16) + 'px',
+                          color: comp.inputTextColor || '#212121',
+                          'font-family': comp.fontFamily || 'inherit',
+                          cursor: 'text'
+                        }"
+                        (click)="$event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (focus)="$event.stopPropagation()"
+                      />
+                    </ng-container>
+
+                    <ng-template #editTextField>
+                      <div
+                        class="w-full h-full flex items-center justify-start cursor-pointer"
+                        [ngStyle]="{
+                          'background-color':
+                            comp.decoration?.color || '#ffffff',
+                          border:
+                            (comp.decoration?.border?.width || 1) +
+                            'px solid ' +
+                            (comp.decoration?.border?.color || '#e0e0e0'),
+                          'border-radius':
+                            (comp.decoration?.borderRadius || 4) + 'px',
+                          'padding-top': comp.labelText ? '20px' : '12px',
+                          'padding-bottom': '12px',
+                          'padding-left': '12px',
+                          'padding-right': '12px',
+                          'font-size': (comp.fontSize || 16) + 'px',
+                          color: comp.hintColor || '#9e9e9e',
+                          'font-family': comp.fontFamily || 'inherit'
+                        }"
+                        (click)="selectComponent(comp, $event)"
+                        (mousedown)="
+                          !isPreviewMode && onMouseDown($event, comp)
+                        "
+                      >
+                        {{ comp.hintText || "TextField" }}
+                      </div>
+                    </ng-template>
+                  </ng-container>
+                </ng-container>
+
+                <!-- Render hijos recursivamente (lógica original mantenida) -->
+                <ng-container *ngIf="comp.childrenLayout; else defaultChildren">
+                  <div
+                    [ngStyle]="{
+                      display: 'flex',
+                      'flex-direction': comp.childrenLayout,
+                      'gap.px': comp.gap || 8,
+                      'justify-content': getFlexJustifyContent(comp),
+                      'align-items': getFlexAlignItems(comp),
+                      width: '100%',
+                      height: '100%',
+                      'padding-top.px':
+                        comp.padding?.top || comp.paddingAll || 0,
+                      'padding-right.px':
+                        comp.padding?.right || comp.paddingAll || 0,
+                      'padding-bottom.px':
+                        comp.padding?.bottom || comp.paddingAll || 0,
+                      'padding-left.px':
+                        comp.padding?.left || comp.paddingAll || 0,
+                      'box-sizing': 'border-box'
+                    }"
+                  >
+                    <ng-container
+                      *ngFor="let child of getFlexChildren(comp.children)"
+                    >
+                      <ng-container
+                        *ngTemplateOutlet="
+                          renderComponent;
+                          context: { comp: child }
+                        "
+                      ></ng-container>
+                    </ng-container>
+                  </div>
+
+                  <ng-container
+                    *ngFor="let textChild of getTextChildren(comp.children)"
+                  >
+                    <ng-container
+                      *ngTemplateOutlet="
+                        renderComponent;
+                        context: { comp: textChild }
+                      "
+                    ></ng-container>
+                  </ng-container>
+                </ng-container>
+
+                <ng-template #defaultChildren>
+                  <ng-container *ngFor="let child of comp.children">
+                    <ng-container
+                      *ngTemplateOutlet="
+                        renderComponent;
+                        context: { comp: child }
+                      "
+                    ></ng-container>
+                  </ng-container>
+                </ng-template>
+              </div>
+            </ng-template>
+          </div>
         </div>
-      </ng-template>
+
+        <!-- Phone Details -->
+        <!-- Volume Buttons -->
+        <div
+          class="absolute left-0 top-20 w-1 h-12 bg-slate-700 rounded-r-sm"
+        ></div>
+        <div
+          class="absolute left-0 top-36 w-1 h-8 bg-slate-700 rounded-r-sm"
+        ></div>
+        <div
+          class="absolute left-0 top-48 w-1 h-8 bg-slate-700 rounded-r-sm"
+        ></div>
+
+        <!-- Power Button -->
+        <div
+          class="absolute right-0 top-32 w-1 h-16 bg-slate-700 rounded-l-sm"
+        ></div>
+      </div>
     </div>
+
+    
   </main>
 
+ 
+<!-- Floating AI Assistant - Nueva posición -->
+<div class="absolute bottom-6 right-[calc(21%+1rem)] z-50" *ngIf="!isPreviewMode">
+  <!-- Main FAB -->
+  <button 
+    *ngIf="!showAIHub"
+    (click)="showAIHub = true"
+    class="group w-14 h-14 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center transform hover:scale-110"
+  >
+    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.74-1.53l-.548-.547z"/>
+    </svg>
+  </button>
+ 
+  <!-- AI Hub expandido -->
+  <div *ngIf="showAIHub" class="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 min-w-[300px] animate-in slide-in-from-bottom-4 duration-300 absolute bottom-16 right-0">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014.846 21H9.154a3.374 3.374 0 00-2.74-1.53l-.548-.547z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-slate-800">AI Assistant</h3>
+      </div>
+      <button (click)="showAIHub = false" class="text-slate-400 hover:text-slate-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+ 
+    <!-- Opciones -->
+    <div class="space-y-2">
+      <button 
+        (click)="openTextPrompt()"
+        class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-purple-50 transition-colors text-left"
+      >
+        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-medium text-slate-800">Generar con texto</p>
+          <p class="text-xs text-slate-500">Describe lo que necesitas</p>
+        </div>
+      </button>
+ 
+      <button 
+        (click)="openImageUpload()"
+        class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors text-left"
+      >
+        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-medium text-slate-800">Subir imagen</p>
+          <p class="text-xs text-slate-500">Convierte mockups en código</p>
+        </div>
+      </button>
+    </div>
+  </div>
+ </div>
   <!-- Columna derecha: panel de configuración -->
   <aside
     *ngIf="!isPreviewMode"
-    class="w-1/5 bg-gray-100 p-4 border-l border-gray-300 overflow-auto"
+    class="w-1/5 bg-slate-900/95 border-l border-gray-300 overflow-auto"
   >
-  <app-propiedades
-  [roomCode]="roomCode"
-  [pages]="pages"
-  [currentPantalla]="currentPantalla"
-  [selectedComponent]="selectedComponent"
-  [pantallaCustomRoute]="pantallaCustomRoute"
-
-></app-propiedades>
+    <app-propiedades
+      [roomCode]="roomCode"
+      [pages]="pages"
+      [currentPantalla]="currentPantalla"
+      [selectedComponent]="selectedComponent"
+      [pantallaCustomRoute]="pantallaCustomRoute"
+    ></app-propiedades>
   </aside>
+
+
+
+
+
+</div>
+<!-- Modal para texto -->
+<div
+  *ngIf="showTextModal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-300"
+  >
+    <div
+      class="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4 rounded-t-2xl"
+    >
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Generar con IA</h3>
+        <button
+          (click)="closeTextModal()"
+          class="text-white/80 hover:text-white"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-4">
+      <textarea
+        [(ngModel)]="questionText"
+        class="w-full h-32 p-3 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        placeholder="Ejemplo: Crea una pantalla de login con email, contraseña y botón"
+      ></textarea>
+
+      <div class="flex gap-3">
+        <button
+          (click)="closeTextModal()"
+          class="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="generateFromText()"
+          [disabled]="!questionText.trim()"
+          class="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 transition-all"
+        >
+          Generar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para imagen -->
+<div
+  *ngIf="showImageModal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-300"
+  >
+    <div
+      class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl"
+    >
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Subir imagen</h3>
+        <button
+          (click)="closeImageModal()"
+          class="text-white/80 hover:text-white"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div
+        class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors"
+      >
+        <input
+          type="file"
+          #fileInput
+          (change)="onImageSelect($event)"
+          class="hidden"
+          accept="image/*"
+        />
+        <div class="space-y-3">
+          <div
+            class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto"
+          >
+            <svg
+              class="w-8 h-8 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+          </div>
+          <div>
+            <button
+              (click)="fileInput.click()"
+              class="text-blue-600 hover:text-blue-500 font-medium"
+            >
+              Seleccionar imagen
+            </button>
+            <p class="text-slate-500 text-sm">PNG, JPG hasta 10MB</p>
+          </div>
+          <p *ngIf="selectedImage" class="text-sm text-green-600">
+            {{ selectedImage.name }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button
+          (click)="closeImageModal()"
+          class="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="generateFromImage()"
+          [disabled]="!selectedImage"
+          class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-500 hover:to-blue-600 disabled:opacity-50 transition-all"
+        >
+          Generar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

@@ -1,50 +1,219 @@
-<section class="min-h-screen flex flex-col bg-gradient-to-r bg-gray-200">
-  <!-- Encabezado -->
-  <header class="bg-graygreen-800 shadow w-full py-4 px-8 flex justify-end">
-    <div class="flex items-center space-x-4">
-      <button (click)="logout()"
-        class="px-4 py-2 text-sm font-semibold text-white bg-red-800 rounded-md hover:bg-gray-200 hover:text-gray-900">
-        Finalizar sesión
-      </button>
+<section class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+  <!-- Header mejorado -->
+  <header class="backdrop-blur-sm bg-slate-900/50 border-b border-slate-700/50 shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo/Brand -->
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold text-slate-200">UI Designer</h1>
+            <p class="text-xs text-slate-400">Collaborative Design Tool</p>
+          </div>
+        </div>
+
+        <!-- Logout button -->
+        <button 
+          (click)="logout()"
+          class="group flex items-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 hover:border-red-400/50 rounded-lg transition-all duration-200 hover:scale-105"
+        >
+          <svg class="w-4 h-4 text-red-400 group-hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span class="text-sm font-medium text-red-400 group-hover:text-red-300">Cerrar sesión</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <<!-- Contenido principal -->
-    <div class="flex flex-col items-center justify-center lg:flex-col">
-      <!-- Crear Sala arriba -->
-      <div class="bg-white rounded-lg shadow-lg p-8 m-4 w-auto lg:w-1/3">
-        <h2 class="text-xl font-bold mb-6 text-center">Crear una Sala</h2>
-        <form (ngSubmit)="createRoom()" class="space-y-4">
-          <div>
-            <label for="roomName" class="block text-sm font-medium text-gray-700">Nombre de la Sala</label>
-            <input [(ngModel)]="roomName" name="roomName" type="text" id="roomName" placeholder="Nombre de la sala"
-              class="mt-1 block w-full p-2.5 border border-gray-300 rounded-md" />
-          </div>
-          <button type="submit"
-            class="w-full bg-slate-700 text-white font-medium rounded-lg py-2.5 text-center hover:bg-slate-800 focus:outline-none">
-            Crear Sala
-          </button>
-        </form>
+  <!-- Hero Section -->
+  <div class="relative overflow-hidden">
+    <!-- Background pattern -->
+    <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+    
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <!-- Hero content -->
+      <div class="text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/10 border border-blue-500/30 rounded-full mb-6">
+          <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+          <span class="text-sm font-medium text-blue-400">Colaboración en tiempo real</span>
+        </div>
+        
+        <h1 class="text-4xl md:text-6xl font-bold text-slate-200 mb-6">
+          Diseña
+          <span class="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"> juntos</span>
+        </h1>
+        
+        <p class="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+          Crea interfaces de usuario increíbles con tu equipo. Colabora en tiempo real, 
+          comparte ideas y da vida a tus diseños.
+        </p>
       </div>
 
-      <!-- Unirse a Sala abajo -->
-      <div class="bg-white rounded-lg shadow-lg p-8 m-4 w-auto lg:w-1/3">
-        <h2 class="text-xl font-bold mb-6 text-center">Ingresar a una Sala</h2>
-        <form (ngSubmit)="joinRoom()" class="space-y-4">
-          <div>
-            <label for="roomCode" class="block text-sm font-medium text-gray-700">Código de la Sala</label>
-            <input [(ngModel)]="roomCode" name="roomCode" type="text" id="roomCode" placeholder="Código de la sala"
-              class="mt-1 block w-full p-2.5 border border-gray-300 rounded-md" />
+      <!-- Action Cards -->
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Crear Sala -->
+        <div class="group relative">
+          <!-- Glow effect -->
+          <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+          
+          <div class="relative bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 hover:bg-slate-800/70 transition-all duration-300">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-200">Crear Nueva Sala</h2>
+                <p class="text-sm text-slate-400">Inicia un nuevo proyecto colaborativo</p>
+              </div>
+            </div>
+
+            <form (ngSubmit)="createRoom()" class="space-y-6">
+              <div>
+                <label for="roomName" class="block text-sm font-medium text-slate-300 mb-2">
+                  Nombre del proyecto
+                </label>
+                <input 
+                  [(ngModel)]="roomName" 
+                  name="roomName" 
+                  type="text" 
+                  id="roomName" 
+                  placeholder="Mi proyecto increíble"
+                  class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  required
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-blue-500/20"
+              >
+                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Crear Sala
+              </button>
+            </form>
+
+            <!-- Error message -->
+            <div *ngIf="errorMessage" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p class="text-sm text-red-400">{{ errorMessage }}</p>
+            </div>
           </div>
-          <button type="submit"
-            class="w-full bg-emerald-600 text-white font-medium rounded-lg py-2.5 text-center hover:bg-green-700 focus:outline-none">
-            Ingresar a Sala
-          </button>
-        </form>
+        </div>
+
+        <!-- Unirse a Sala -->
+        <div class="group relative">
+          <!-- Glow effect -->
+          <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
+          
+          <div class="relative bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 hover:bg-slate-800/70 transition-all duration-300">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-slate-200">Unirse a Sala</h2>
+                <p class="text-sm text-slate-400">Colabora en un proyecto existente</p>
+              </div>
+            </div>
+
+            <form (ngSubmit)="joinRoom()" class="space-y-6">
+              <div>
+                <label for="roomCode" class="block text-sm font-medium text-slate-300 mb-2">
+                  Código de la sala
+                </label>
+                <input 
+                  [(ngModel)]="roomCode" 
+                  name="roomCode" 
+                  type="text" 
+                  id="roomCode" 
+                  placeholder="ABC123"
+                  class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono uppercase"
+                  required
+                  maxlength="6"
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-emerald-500/20"
+              >
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                </svg>
+                Ingresar
+              </button>
+            </form>
+
+            <!-- Error message -->
+            <div *ngIf="joinErrorMessage" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p class="text-sm text-red-400">{{ joinErrorMessage }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features Section -->
+      <div class="mt-24">
+        <h3 class="text-2xl font-bold text-slate-200 text-center mb-12">
+          ¿Por qué elegir UI Designer?
+        </h3>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+          <!-- Feature 1 -->
+          <div class="text-center group">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+            </div>
+            <h4 class="text-lg font-semibold text-slate-200 mb-2">Tiempo Real</h4>
+            <p class="text-slate-400 text-sm">Ve los cambios de tu equipo instantáneamente mientras diseñan</p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="text-center group">
+            <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+            </div>
+            <h4 class="text-lg font-semibold text-slate-200 mb-2">Colaborativo</h4>
+            <p class="text-slate-400 text-sm">Trabaja con tu equipo sin límites de ubicación o dispositivo</p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="text-center group">
+            <div class="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </div>
+            <h4 class="text-lg font-semibold text-slate-200 mb-2">Exportación</h4>
+            <p class="text-slate-400 text-sm">Descarga tu proyecto como código Angular listo para producción</p>
+          </div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div>
-
+  <!-- Footer -->
+  <footer class="border-t border-slate-700/50 bg-slate-900/50 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="text-center">
+        <p class="text-slate-400 text-sm">
+          © 2024 UI Designer. Creado con ❤️ para diseñadores colaborativos.
+        </p>
+      </div>
     </div>
+  </footer>
 </section>

@@ -253,6 +253,20 @@ export class SokectSevice {
       });
     });
   }
+
+// Emitir evento para limpiar toda la página
+clearPage(roomCode: string, pageId: string) {
+  this.socket.emit('clearPage', { roomCode, pageId });
+}
+
+// Escuchar cuando se limpia una página
+onPageCleared(): Observable<{ pageId: string }> {
+  return new Observable((observer) => {
+    this.socket.on('pageCleared', (data) => {
+      observer.next(data);
+    });
+  });
+}
   
   
 }

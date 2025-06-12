@@ -4,6 +4,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnInit,
   Output,
 } from '@angular/core';
 import { CanvasComponent } from '../../interface/canvas-component.interface';
@@ -21,7 +22,13 @@ import { ComponentDimensions } from '../../interface/dimencion.interface';
   templateUrl: './propiedades.component.html',
   styleUrl: './propiedades.component.css',
 })
-export class PropiedadesComponent {
+export class PropiedadesComponent implements OnInit {
+
+  
+  roomName: string = ''; // Nombre de la sala que obtenemos del backend
+  errorMessage: string = ''; // Para manejar errores
+  usersInRoom: any[] = []; // Almacena los usuarios que se unen
+
   constructor(
     private   route: ActivatedRoute,
     private  socketService: SokectSevice,
@@ -43,7 +50,9 @@ export class PropiedadesComponent {
 
   //instancias
   @Input() pantallaCustomRoute: string = '';
-
+  ngOnInit(): void {
+    this.roomCode = this.route.snapshot.paramMap.get('code') || '';
+  }
   findComponentById(
     list: CanvasComponent[],
     id: string
@@ -893,5 +902,27 @@ export class PropiedadesComponent {
         );
       }
     });
+  }
+
+   // Método para salir de la sala
+   leaveRoom() {
+    this.socketService.leaveRoom(this.roomCode);
+
+    // Escuchar el evento cuando el usuario ha salido correctamente
+    this.socketService.onLeftRoom().subscribe({
+      next: () => {
+        console.log(`Saliste de la sala ${this.roomCode}`);
+        this.router.navigate(['/client']); // Redirigir
+      },
+      error: (err) => {
+        console.error('Error al salir de la sala:', err);
+        this.errorMessage = 'No se pudo salir de la sala.';
+      },
+    });
+  }
+
+  downloadAngularProject() {
+    const url = `https://deplo-u9v2.onrender.com/api/export/angular/${this.roomCode}`;
+    window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
   }
 }
