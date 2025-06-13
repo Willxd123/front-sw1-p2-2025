@@ -303,6 +303,25 @@ export class RoomsComponent implements OnInit {
         }
       });
     //fin hijos
+
+    //tabka
+    this.socketService.onTableStructureUpdated().subscribe(({ pageId, tableId, children }) => {
+      const page = this.pages.find(p => p.id === pageId);
+      if (!page) return;
+      
+      const table = this.findComponentById(page.components, tableId);
+      if (table && table.type === 'table') {
+        // Actualizar la estructura de la tabla
+        table.children = children;
+        
+        // Si la tabla seleccionada es la que se actualizó, refrescar vista
+        if (this.selectedComponent?.id === tableId) {
+          this.selectedComponent = table;
+        }
+        
+        this.cdr.detectChanges();
+      }
+    });
     //para el modo previsualizacion
     window.addEventListener('keydown', this.handleKeyDown.bind(this));
     document.addEventListener('click', this.handleDocumentClick.bind(this));
@@ -772,9 +791,30 @@ export class RoomsComponent implements OnInit {
     }
 
     if (comp.type === 'table') {
-      // Configuración específica para el contenedor de tabla
-      style.backgroundColor = 'transparent'; // El fondo lo maneja la tabla interna
-      style.border = 'none'; // Sin borde en el contenedor
+      // Para tablas, usamos dimensiones mínimas en lugar de fijas
+      const minWidth = comp.width || 260;
+      const minHeight = comp.height || 150;
+      
+      // Calcular el tamaño real necesario basado en el contenido
+      const rows = comp.rows || 3;
+      const columns = comp.columns || 3;
+      const cellPadding = comp.cellPadding || 8;
+      const borderWidth = comp.tableBorder?.width || 1;
+      
+      // Estimar el ancho necesario
+      const estimatedCellWidth = Math.max(80, minWidth / columns);
+      const calculatedWidth = Math.max(minWidth, estimatedCellWidth * columns + borderWidth * (columns + 1));
+      
+      // Estimar la altura necesaria
+      const estimatedRowHeight = 40; // Altura base por fila
+      const calculatedHeight = Math.max(minHeight, estimatedRowHeight * rows + borderWidth * (rows + 1));
+      
+      style.width = calculatedWidth + 'px';
+      style.height = calculatedHeight + 'px';
+      style.minWidth = minWidth + 'px';
+      style.minHeight = minHeight + 'px';
+      style.backgroundColor = 'transparent';
+      style.border = 'none';
       style.borderRadius = '0px';
       style.overflow = 'visible'; // Permitir que la tabla se vea completa
       
@@ -1294,15 +1334,7 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
     }
   }
 
-  /**
-   * Selecciona la tabla completa (un clic)
-   */
-  selectTable(table: CanvasComponent, event: MouseEvent): void {
-    event.stopPropagation();
-    this.selectedComponent = table;
-    this.contextMenu.visible = false;
-    console.log('🔵 Tabla seleccionada:', table.id, 'Tipo:', table.type);
-  }
+
 
   /**
    * Maneja el clic en una celda - evita que se seleccione la tabla cuando se hace clic en celda
@@ -1317,25 +1349,6 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
     // La tabla seguirá seleccionada si ya lo estaba
   }
 
-  /**
-   * Selecciona una celda específica (doble clic)
-   */
-  selectCell(cell: CanvasComponent, event: MouseEvent): void {
-    event.stopPropagation();
-    this.selectedComponent = cell;
-    this.contextMenu.visible = false;
-    console.log(
-      '🔸 Celda seleccionada:',
-      cell.id,
-      'Tipo:',
-      cell.type,
-      `Fila: ${(cell.rowIndex || 0) + 1}, Columna: ${
-        (cell.columnIndex || 0) + 1
-      }`,
-      'Contenido:',
-      cell.content
-    );
-  }
 
   /**
    * Obtiene el color de fondo de una celda según su posición y configuración de la tabla
@@ -1401,7 +1414,92 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
     const numColumns = table.columns || 3;
     return Math.max(60, totalWidth / numColumns); // Mínimo 60px por columna
   }
+// Agregar estos métodos a tu componente rooms.component.ts
 
+/**
+ * Maneja el click específico en celdas de tabla
+ */
+handleTableCellClick(cell: CanvasComponent, table: CanvasComponent, event: MouseEvent): void {
+  if (this.isPreviewMode) return;
+  
+  // Detener propagación para evitar que se active el click de la tabla
+  event.stopPropagation();
+  event.preventDefault();
+  
+  console.log(`🔸 Click en celda: ${cell.id} - Fila: ${(cell.rowIndex || 0) + 1}, Columna: ${(cell.columnIndex || 0) + 1}`);
+  
+  // Seleccionar la celda
+  this.selectedComponent = cell;
+  this.contextMenu.visible = false;
+  
+  // Forzar detección de cambios
+  this.cdr.detectChanges();
+}
+
+/**
+ * Maneja el mousedown específico para celdas de tabla
+ */
+onTableCellMouseDown(event: MouseEvent, cell: CanvasComponent, table: CanvasComponent): void {
+  if (this.isPreviewMode) return;
+  
+  // Detener propagación
+  event.stopPropagation();
+  
+  // No iniciar drag para celdas individuales, solo para la tabla completa
+  // Las celdas se seleccionan pero no se mueven individualmente
+  this.selectedComponent = cell;
+  
+  console.log(`🔸 MouseDown en celda: ${cell.id}`);
+}
+
+/**
+ * Selecciona la tabla completa (mejorado)
+ */
+selectTable(table: CanvasComponent, event: MouseEvent): void {
+  if (this.isPreviewMode) return;
+  
+  // Solo seleccionar la tabla si el click fue directamente en ella
+  // y no en una celda
+  const target = event.target as HTMLElement;
+  const isDirectTableClick = target.tagName.toLowerCase() === 'table' || 
+                            target.classList.contains('table-container');
+  
+  if (isDirectTableClick) {
+    event.stopPropagation();
+    this.selectedComponent = table;
+    this.contextMenu.visible = false;
+    console.log('🔵 Tabla seleccionada:', table.id);
+    this.cdr.detectChanges();
+  }
+}
+
+/**
+ * Actualiza el método selectCell existente
+ */
+selectCell(cell: CanvasComponent, event: MouseEvent): void {
+  if (this.isPreviewMode) return;
+  
+  event.stopPropagation();
+  event.preventDefault();
+  
+  this.selectedComponent = cell;
+  this.contextMenu.visible = false;
+  
+  console.log(
+    '🔸 Celda seleccionada (doble click):',
+    cell.id,
+    'Tipo:',
+    cell.type,
+    `Fila: ${(cell.rowIndex || 0) + 1}, Columna: ${(cell.columnIndex || 0) + 1}`,
+    'Contenido:',
+    cell.content
+  );
+  
+  this.cdr.detectChanges();
+}
+
+
+//exportar proyecto
   //fin border
   downloadAngularProject() {
     const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;

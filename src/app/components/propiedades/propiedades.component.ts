@@ -912,7 +912,7 @@ export class PropiedadesComponent implements OnInit {
   }
 
   downloadAngularProject() {
-    const url = `https://deplo-u9v2.onrender.com/api/export/angular/${this.roomCode}`;
+    const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;
     window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
   }
 
@@ -935,6 +935,7 @@ updateTableStructure(property: 'rows' | 'columns', newValue: number): void {
   const currentRows = table.rows || 3;
   const currentColumns = table.columns || 3;
   
+  // Actualizar la estructura según la propiedad
   if (property === 'rows') {
     this.updateTableRows(table, newValue, currentColumns);
   } else {
@@ -944,6 +945,9 @@ updateTableStructure(property: 'rows' | 'columns', newValue: number): void {
   // Actualizar las propiedades de la tabla
   this.updateProperty('rows', property === 'rows' ? newValue : currentRows);
   this.updateProperty('columns', property === 'columns' ? newValue : currentColumns);
+  
+  // Emitir los cambios a través del socket
+  this.emitTableStructureUpdate(table);
 }
 
 /**
@@ -956,12 +960,13 @@ addTableRow(): void {
   const columns = table.columns || 3;
   const newRowIndex = table.children.length;
   
+  // Agregar la nueva fila
   this.addTableRowAtIndex(table, newRowIndex, columns);
   
   // Actualizar propiedades
   this.updateProperty('rows', newRowIndex + 1);
   
-  // Emitir actualización de estructura
+  // Emitir actualización de estructura completa
   this.emitTableStructureUpdate(table);
 }
 
@@ -974,9 +979,13 @@ removeTableRow(): void {
   const table = this.selectedComponent;
   if (table.children.length <= 1) return; // No eliminar si solo hay una fila
   
+  // Eliminar la última fila
   table.children.pop();
+  
+  // Actualizar propiedades
   this.updateProperty('rows', table.children.length);
   
+  // Emitir actualización de estructura completa
   this.emitTableStructureUpdate(table);
 }
 
@@ -989,11 +998,15 @@ addTableColumn(): void {
   const table = this.selectedComponent;
   const newColumnIndex = table.columns || 3;
   
+  // Agregar celda a cada fila
   table.children.forEach((row, rowIndex) => {
     this.addTableCellAtPosition(row, rowIndex, newColumnIndex);
   });
   
+  // Actualizar propiedades
   this.updateProperty('columns', newColumnIndex + 1);
+  
+  // Emitir actualización de estructura completa
   this.emitTableStructureUpdate(table);
 }
 
@@ -1007,13 +1020,17 @@ removeTableColumn(): void {
   const currentColumns = table.columns || 3;
   if (currentColumns <= 1) return; // No eliminar si solo hay una columna
   
+  // Eliminar última celda de cada fila
   table.children.forEach(row => {
     if (row.children.length > 0) {
       row.children.pop();
     }
   });
   
+  // Actualizar propiedades
   this.updateProperty('columns', currentColumns - 1);
+  
+  // Emitir actualización de estructura completa
   this.emitTableStructureUpdate(table);
 }
 
@@ -1125,6 +1142,8 @@ private emitTableStructureUpdate(table: CanvasComponent): void {
   if (!this.roomCode) return;
   
   const pageId = this.pages[this.currentPantalla].id;
+  
+  // Emitir el cambio completo de la estructura
   this.socketService.updateTableStructure(
     this.roomCode,
     pageId,
@@ -1137,6 +1156,6 @@ private emitTableStructureUpdate(table: CanvasComponent): void {
  * Genera un ID único para nuevos elementos
  */
 private generateUniqueId(): string {
-  return 'table-' + Math.random().toString(36).substr(2, 9);
+  return uuidv4();
 }
 }
