@@ -1531,10 +1531,18 @@ selectCell(cell: CanvasComponent, event: MouseEvent): void {
     this.selectedImage = null;
   }
 
-  onImageSelect(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedImage = file;
+  onImageSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    
+    // Verificar que el input tenga archivos
+    if (input.files && input.files.length > 0) {
+      this.selectedImage = input.files[0];
+      this.imagePrompt = ''; // Limpiar el prompt anterior
+      
+      console.log('Imagen seleccionada:', this.selectedImage.name);
+      
+      // Procesar la imagen automáticamente
+      this.sendImageToBackend();
     }
   }
 
@@ -1546,17 +1554,18 @@ selectCell(cell: CanvasComponent, event: MouseEvent): void {
   }
 
   generateFromImage(): void {
-    if (!this.selectedImage) return;
-
-    // Tu futura implementación para imágenes
-    const formData = new FormData();
-    formData.append('image', this.selectedImage);
-
-    // Por ahora, solo cerramos el modal
+    if (!this.selectedImage) {
+      console.warn('No hay imagen seleccionada');
+      return;
+    }
+  
+    console.log('Procesando imagen:', this.selectedImage.name);
+    
+    // Procesar la imagen
+    this.sendImageToBackend();
+    
+    // Cerrar modal
     this.closeImageModal();
-
-    // Aquí irá tu lógica de imagen cuando esté lista
-    console.log('Imagen seleccionada para procesar:', this.selectedImage.name);
   }
   showResponseModal = false;
   httpResponse: any;
@@ -1615,6 +1624,73 @@ selectCell(cell: CanvasComponent, event: MouseEvent): void {
         this.httpResponse = error;
         this.showResponseModal = true;
       },
+    });
+  }
+  //imagen
+  imagePrompt: string = ''; 
+
+  cargarimagenia(promptText: string) {
+    const body = { question: promptText };
+    // this.http.post('http://localhost:5000/query', body).subscribe({
+    this.http.post('http://localhost:5000/query', body).subscribe({
+      next: (response: any) => {
+        try {
+          const components = JSON.parse(response.response);
+          const pageId = this.pages[this.currentPantalla].id;
+  
+          this.socketService.clearPage(this.roomCode, pageId);
+  
+          setTimeout(() => {
+            components.forEach((component: any, index: number) => {
+              const componentWithNewId = {
+                ...component,
+                id: uuidv4()
+              };
+  
+              setTimeout(() => {
+                this.socketService.addCanvasComponent(this.roomCode, pageId, componentWithNewId);
+              }, index * 100);
+            });
+          }, 200);
+  
+          this.showResponseModal = true;
+          this.httpResponse = "Diseño cargado exitosamente' - ${components.length} 'componentes agregados'";
+          console.log('🤖 Componentes de IA cargados:', components.length, 'elementos');
+          console.log('🧹 Pantalla limpiada y nuevos componentes agregados');
+  
+        } catch (error) {
+          this.httpResponse = "Error al procesar la respuesta: " + error;
+          this.showResponseModal = true;
+        }
+      },
+      error: (error) => {
+        this.httpResponse = error;
+        this.showResponseModal = true;
+      }
+    });
+  }
+
+
+  sendImageToBackend() {
+    if (!this.selectedImage) return;
+    console.log('Enviando imagen al backend...');
+    const formData = new FormData();
+    formData.append('image', this.selectedImage);
+    formData.append('prompt', this.imagePrompt || 'Describe la imagen');
+
+    // this.http.post<any>('http://localhost:5000/analyze-image', formData).subscribe({
+    this.http.post<any>('http://localhost:5000/analyze-image', formData).subscribe({
+      next: (response) => {
+        this.httpResponse = response.response;
+        // this.showResponseModal = true;
+        this.showImageModal = false;
+        this.cargarimagenia(response.response);
+      },
+      error: (error) => {
+        this.httpResponse = error.error?.error || 'Error al analizar la imagen';
+        this.showResponseModal = true;
+        //this.showImageModal = false;
+      }
     });
   }
 }

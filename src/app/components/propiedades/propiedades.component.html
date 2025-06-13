@@ -661,329 +661,387 @@
       </div>
     </div>
 
+    <!-- Agregar DESPUÉS de las propiedades de TextField en propiedades.component.html -->
 
- <!-- Agregar DESPUÉS de las propiedades de TextField en propiedades.component.html -->
-
-<!-- Propiedades de Table -->
-<div *ngIf="selectedComponent.type === 'table'" class="space-y-5">
-  <div class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-      <svg class="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"/>
-      </svg>
-      Configuración de Tabla
-    </h3>
-
-    <div class="space-y-4">
-      <!-- Estructura de la tabla -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Filas</label>
-          <input
-            type="number"
-            [value]="selectedComponent.rows || 3"
-            (input)="updateTableStructure('rows', getInputNumberValue($event))"
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
-            min="1"
-            max="20"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Columnas</label>
-          <input
-            type="number"
-            [value]="selectedComponent.columns || 3"
-            (input)="updateTableStructure('columns', getInputNumberValue($event))"
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
-            min="1"
-            max="10"
-          />
-        </div>
-      </div>
-
-      <!-- Botones de estructura -->
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          (click)="addTableRow()"
-          class="flex items-center gap-2 px-3 py-2 bg-green-600/10 hover:bg-green-600/20 border border-green-500/30 rounded-lg transition-all"
+    <!-- Propiedades de Table -->
+    <div *ngIf="selectedComponent.type === 'table'" class="space-y-5">
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+      >
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
         >
-          <span class="text-sm">➕</span>
-          <span class="text-sm text-green-400">Agregar Fila</span>
-        </button>
-        
-        <button
-          (click)="removeTableRow()"
-          class="flex items-center gap-2 px-3 py-2 bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 rounded-lg transition-all"
-        >
-          <span class="text-sm">🗑️</span>
-          <span class="text-sm text-red-400">Eliminar Fila</span>
-        </button>
-        
-        <button
-          (click)="addTableColumn()"
-          class="flex items-center gap-2 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg transition-all"
-        >
-          <span class="text-sm">➕</span>
-          <span class="text-sm text-blue-400">Agregar Columna</span>
-        </button>
-        
-        <button
-          (click)="removeTableColumn()"
-          class="flex items-center gap-2 px-3 py-2 bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-500/30 rounded-lg transition-all"
-        >
-          <span class="text-sm">🗑️</span>
-          <span class="text-sm text-yellow-400">Eliminar Columna</span>
-        </button>
-      </div>
-
-      <!-- Configuración de bordes -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Color del borde</label>
-          <div class="relative">
-            <input
-              type="color"
-              [value]="selectedComponent.tableBorder?.color || '#cccccc'"
-              (input)="updateProperty('tableBorder.color', getInputValue($event))"
-              class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
-            />
-            <div class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"></div>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Grosor del borde</label>
-          <input
-            type="number"
-            [value]="selectedComponent.tableBorder?.width || 1"
-            (input)="updateProperty('tableBorder.width', getInputNumberValue($event))"
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
-            min="0"
-            max="10"
-          />
-        </div>
-      </div>
-
-      <!-- Padding de celdas -->
-      <div>
-        <label class="block text-sm font-medium text-slate-300 mb-2">Padding de celdas (px)</label>
-        <input
-          type="number"
-          [value]="selectedComponent.cellPadding || 8"
-          (input)="updateProperty('cellPadding', getInputNumberValue($event))"
-          class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
-          min="0"
-          max="50"
-        />
-      </div>
-
-      <!-- Configuración de encabezado -->
-      <div class="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg">
-        <div>
-          <label class="block text-sm font-medium text-slate-300">Primera fila como encabezado</label>
-          <p class="text-xs text-slate-400">Aplica estilo especial a la primera fila</p>
-        </div>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            [checked]="selectedComponent.headerRow"
-            (change)="updateProperty('headerRow', $any($event.target).checked)"
-            class="sr-only peer"
-          />
-          <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
-        </label>
-      </div>
-
-      <!-- Colores -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Color de encabezado</label>
-          <div class="relative">
-            <input
-              type="color"
-              [value]="selectedComponent.headerBackgroundColor || '#f0f0f0'"
-              (input)="updateProperty('headerBackgroundColor', getInputValue($event))"
-              class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
-            />
-            <div class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"></div>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Color alternado</label>
-          <div class="relative">
-            <input
-              type="color"
-              [value]="selectedComponent.alternateRowColor || '#f9f9f9'"
-              (input)="updateProperty('alternateRowColor', getInputValue($event))"
-              class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
-            />
-            <div class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Alineación vertical -->
-      <div>
-        <label class="block text-sm font-medium text-slate-300 mb-2">Alineación vertical</label>
-        <select
-          class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
-          [value]="selectedComponent.defaultVerticalAlignment || 'middle'"
-          (change)="updateProperty('defaultVerticalAlignment', getInputValue($event))"
-        >
-          <option value="top">Arriba</option>
-          <option value="middle">Centro</option>
-          <option value="bottom">Abajo</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Propiedades específicas para TableCell -->
-<div *ngIf="selectedComponent.type === 'tableCell'" class="space-y-5">
-  <div class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4">
-    <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-      <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
-      </svg>
-      Configuración de Celda
-    </h3>
-
-    <div class="space-y-4">
-      <!-- Contenido de la celda -->
-      <div>
-        <label class="block text-sm font-medium text-slate-300 mb-2">Contenido</label>
-        <textarea
-          [value]="selectedComponent.content || ''"
-          (input)="updateProperty('content', getInputValue($event))"
-          class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all resize-none"
-          rows="3"
-          placeholder="Contenido de la celda..."
-        ></textarea>
-      </div>
-
-      <!-- Propiedades de texto -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Tamaño (px)</label>
-          <input
-            type="number"
-            [value]="selectedComponent.fontSize || 12"
-            (input)="updateProperty('fontSize', getInputNumberValue($event))"
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            min="8"
-            max="72"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Color del texto</label>
-          <div class="relative">
-            <input
-              type="color"
-              [value]="selectedComponent.textColor || '#333333'"
-              (input)="updateProperty('textColor', getInputValue($event))"
-              class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
-            />
-            <div class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Tipo de letra</label>
-          <select
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            [value]="selectedComponent.fontFamily || 'inherit'"
-            (change)="updateProperty('fontFamily', getInputValue($event))"
+          <svg
+            class="w-4 h-4 text-teal-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <option value="inherit">Sistema</option>
-            <option value="Arial">Arial</option>
-            <option value="'Times New Roman'">Times New Roman</option>
-            <option value="'Courier New'">Courier New</option>
-            <option value="'Roboto'">Roboto</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-300 mb-2">Alineación</label>
-          <select
-            class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
-            [value]="selectedComponent.textAlign || 'center'"
-            (change)="updateProperty('textAlign', getInputValue($event))"
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"
+            />
+          </svg>
+          Configuración de Tabla
+        </h3>
+
+        <div class="space-y-4">
+          <!-- Estructura de la tabla -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Filas</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.rows || 3"
+                (input)="
+                  updateTableStructure('rows', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+                min="1"
+                max="20"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Columnas</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.columns || 3"
+                (input)="
+                  updateTableStructure('columns', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+                min="1"
+                max="10"
+              />
+            </div>
+          </div>
+
+          <!-- Botones de estructura -->
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              (click)="addTableRow()"
+              class="flex items-center gap-2 px-3 py-2 bg-green-600/10 hover:bg-green-600/20 border border-green-500/30 rounded-lg transition-all"
+            >
+              <span class="text-sm">➕</span>
+              <span class="text-sm text-green-400">Agregar Fila</span>
+            </button>
+
+            <button
+              (click)="removeTableRow()"
+              class="flex items-center gap-2 px-3 py-2 bg-red-600/10 hover:bg-red-600/20 border border-red-500/30 rounded-lg transition-all"
+            >
+              <span class="text-sm">🗑️</span>
+              <span class="text-sm text-red-400">Eliminar Fila</span>
+            </button>
+
+            <button
+              (click)="addTableColumn()"
+              class="flex items-center gap-2 px-3 py-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg transition-all"
+            >
+              <span class="text-sm">➕</span>
+              <span class="text-sm text-blue-400">Agregar Columna</span>
+            </button>
+
+            <button
+              (click)="removeTableColumn()"
+              class="flex items-center gap-2 px-3 py-2 bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-500/30 rounded-lg transition-all"
+            >
+              <span class="text-sm">🗑️</span>
+              <span class="text-sm text-yellow-400">Eliminar Columna</span>
+            </button>
+          </div>
+
+          <!-- Configuración de bordes -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color del borde</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.tableBorder?.color || '#cccccc'"
+                  (input)="
+                    updateProperty('tableBorder.color', getInputValue($event))
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Grosor del borde</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.tableBorder?.width || 1"
+                (input)="
+                  updateProperty(
+                    'tableBorder.width',
+                    getInputNumberValue($event)
+                  )
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+                min="0"
+                max="10"
+              />
+            </div>
+          </div>
+
+          <!-- Padding de celdas -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Padding de celdas (px)</label
+            >
+            <input
+              type="number"
+              [value]="selectedComponent.cellPadding || 8"
+              (input)="
+                updateProperty('cellPadding', getInputNumberValue($event))
+              "
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+              min="0"
+              max="50"
+            />
+          </div>
+
+          <!-- Configuración de encabezado -->
+          <div
+            class="flex items-center justify-between p-3 bg-slate-700/30 border border-slate-600/30 rounded-lg"
           >
-            <option value="left">Izquierda</option>
-            <option value="center">Centro</option>
-            <option value="right">Derecha</option>
-            <option value="justify">Justificada</option>
-          </select>
-        </div>
-      </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300"
+                >Primera fila como encabezado</label
+              >
+              <p class="text-xs text-slate-400">
+                Aplica estilo especial a la primera fila
+              </p>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                [checked]="selectedComponent.headerRow"
+                (change)="
+                  updateProperty('headerRow', $any($event.target).checked)
+                "
+                class="sr-only peer"
+              />
+              <div
+                class="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"
+              ></div>
+            </label>
+          </div>
 
-      <!-- Color de fondo específico de la celda -->
-      <div>
-        <label class="block text-sm font-medium text-slate-300 mb-2">Color de fondo</label>
-        <div class="relative">
-          <input
-            type="color"
-            [value]="selectedComponent.cellBackgroundColor || '#ffffff'"
-            (input)="updateProperty('cellBackgroundColor', getInputValue($event))"
-            class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
-          />
-          <div class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"></div>
-        </div>
-      </div>
+          <!-- Colores -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color de encabezado</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.headerBackgroundColor || '#f0f0f0'"
+                  (input)="
+                    updateProperty(
+                      'headerBackgroundColor',
+                      getInputValue($event)
+                    )
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color alternado</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.alternateRowColor || '#f9f9f9'"
+                  (input)="
+                    updateProperty('alternateRowColor', getInputValue($event))
+                  "
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+          </div>
 
-      <!-- Información de posición -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-2">Fila</label>
-          <input
-            type="text"
-            [value]="(selectedComponent.rowIndex || 0) + 1"
-            class="w-full px-3 py-2 bg-slate-700/30 border border-slate-600/30 rounded-lg text-slate-400 cursor-not-allowed"
-            readonly
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-2">Columna</label>
-          <input
-            type="text"
-            [value]="(selectedComponent.columnIndex || 0) + 1"
-            class="w-full px-3 py-2 bg-slate-700/30 border border-slate-600/30 rounded-lg text-slate-400 cursor-not-allowed"
-            readonly
-          />
+          <!-- Alineación vertical -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Alineación vertical</label
+            >
+            <select
+              class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+              [value]="selectedComponent.defaultVerticalAlignment || 'middle'"
+              (change)="
+                updateProperty(
+                  'defaultVerticalAlignment',
+                  getInputValue($event)
+                )
+              "
+            >
+              <option value="top">Arriba</option>
+              <option value="middle">Centro</option>
+              <option value="bottom">Abajo</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div> 
-    
-    <!-- Propiedades básicas para TableCell - Reutilizando las existentes -->
+
+    <!-- Propiedades específicas para TableCell -->
     <div *ngIf="selectedComponent.type === 'tableCell'" class="space-y-5">
-      <div class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4">
-        <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+      <div
+        class="bg-slate-800/30 backdrop-blur border border-slate-700/50 rounded-xl p-4"
+      >
+        <h3
+          class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2"
+        >
+          <svg
+            class="w-4 h-4 text-cyan-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h7"
+            />
           </svg>
           Configuración de Celda
         </h3>
-    
+
         <div class="space-y-4">
-          <!-- Contenido - Reutilizamos el campo de texto -->
+          <!-- Contenido de la celda -->
           <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Texto</label>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Contenido</label
+            >
             <textarea
-              [value]="selectedComponent.content || selectedComponent.text || ''"
+              [value]="selectedComponent.content || ''"
               (input)="updateProperty('content', getInputValue($event))"
               class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all resize-none"
-              rows="2"
+              rows="3"
               placeholder="Contenido de la celda..."
             ></textarea>
           </div>
-    
+
+          <!-- Propiedades de texto -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tamaño (px)</label
+              >
+              <input
+                type="number"
+                [value]="selectedComponent.fontSize || 12"
+                (input)="
+                  updateProperty('fontSize', getInputNumberValue($event))
+                "
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                min="8"
+                max="72"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Color del texto</label
+              >
+              <div class="relative">
+                <input
+                  type="color"
+                  [value]="selectedComponent.textColor || '#333333'"
+                  (input)="updateProperty('textColor', getInputValue($event))"
+                  class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+                />
+                <div
+                  class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Tipo de letra</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                [value]="selectedComponent.fontFamily || 'inherit'"
+                (change)="updateProperty('fontFamily', getInputValue($event))"
+              >
+                <option value="inherit">Sistema</option>
+                <option value="Arial">Arial</option>
+                <option value="'Times New Roman'">Times New Roman</option>
+                <option value="'Courier New'">Courier New</option>
+                <option value="'Roboto'">Roboto</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2"
+                >Alineación</label
+              >
+              <select
+                class="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                [value]="selectedComponent.textAlign || 'center'"
+                (change)="updateProperty('textAlign', getInputValue($event))"
+              >
+                <option value="left">Izquierda</option>
+                <option value="center">Centro</option>
+                <option value="right">Derecha</option>
+                <option value="justify">Justificada</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Color de fondo específico de la celda -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2"
+              >Color de fondo</label
+            >
+            <div class="relative">
+              <input
+                type="color"
+                [value]="selectedComponent.cellBackgroundColor || '#ffffff'"
+                (input)="
+                  updateProperty('cellBackgroundColor', getInputValue($event))
+                "
+                class="w-full h-10 rounded-lg border border-slate-600/50 cursor-pointer"
+              />
+              <div
+                class="absolute inset-0 rounded-lg ring-2 ring-slate-600/50 pointer-events-none"
+              ></div>
+            </div>
+          </div>
+
           <!-- Información de posición -->
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-medium text-slate-400 mb-2">Fila</label>
+              <label class="block text-sm font-medium text-slate-400 mb-2"
+                >Fila</label
+              >
               <input
                 type="text"
                 [value]="(selectedComponent.rowIndex || 0) + 1"
@@ -992,7 +1050,9 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-slate-400 mb-2">Columna</label>
+              <label class="block text-sm font-medium text-slate-400 mb-2"
+                >Columna</label
+              >
               <input
                 type="text"
                 [value]="(selectedComponent.columnIndex || 0) + 1"
@@ -1004,7 +1064,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Propiedades generales de apariencia -->
     <div
       *ngIf="selectedComponent.type !== 'Checkbox'"
