@@ -13,8 +13,7 @@ import { SokectSevice } from '../../services/socket.service';
 import { FormsModule } from '@angular/forms';
 import { Page } from '../../interface/pantallas.interfaces';
 import { ComponentDimensions } from '../../interface/dimencion.interface';
-
-
+import { v4 as uuidv4 } from 'uuid';
 @Component({
   selector: 'app-propiedades',
   standalone: true,
@@ -23,15 +22,13 @@ import { ComponentDimensions } from '../../interface/dimencion.interface';
   styleUrl: './propiedades.component.css',
 })
 export class PropiedadesComponent implements OnInit {
-
-  
   roomName: string = ''; // Nombre de la sala que obtenemos del backend
   errorMessage: string = ''; // Para manejar errores
   usersInRoom: any[] = []; // Almacena los usuarios que se unen
 
   constructor(
-    private   route: ActivatedRoute,
-    private  socketService: SokectSevice,
+    private route: ActivatedRoute,
+    private socketService: SokectSevice,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -70,7 +67,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Calcula el padding efectivo de un componente
    */
-   getEffectivePadding(comp: any): {
+  getEffectivePadding(comp: any): {
     top: number;
     right: number;
     bottom: number;
@@ -94,12 +91,12 @@ export class PropiedadesComponent implements OnInit {
     };
   }
   // Agregar este método para manejar cambios de childrenLayout
-    //metodos auxiliares para ajustar tamaños
+  //metodos auxiliares para ajustar tamaños
   /**
    * Valida y ajusta los tamaños de los hijos cuando el padre cambia de tamaño
    * considerando si tiene childrenLayout o no
    */
-   validateAndAdjustChildrenSizes(parentId: string): void {
+  validateAndAdjustChildrenSizes(parentId: string): void {
     if (!parentId || !this.roomCode) return;
 
     const page = this.pages[this.currentPantalla];
@@ -148,7 +145,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Valida hijos en layout stack/null (posicionamiento absoluto)
    */
-   validateStackLayoutChildren(
+  validateStackLayoutChildren(
     parent: any,
     availableWidth: number,
     availableHeight: number,
@@ -187,7 +184,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Valida hijos en layout row
    */
-   validateRowLayoutChildren(
+  validateRowLayoutChildren(
     parent: any,
     availableWidth: number,
     availableHeight: number
@@ -228,7 +225,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Emite la actualización de tamaño del hijo al servidor
    */
-   emitChildSizeUpdate(child: any): void {
+  emitChildSizeUpdate(child: any): void {
     const pageId = this.pages[this.currentPantalla].id;
     this.socketService.updateComponentProperties(
       this.roomCode,
@@ -243,7 +240,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Valida hijos en layout column
    */
-   validateColumnLayoutChildren(
+  validateColumnLayoutChildren(
     parent: any,
     availableWidth: number,
     availableHeight: number
@@ -551,10 +548,7 @@ export class PropiedadesComponent implements OnInit {
     }
   }
 
-   executeCheckboxAction(
-    comp: CanvasComponent,
-    newCheckedState: boolean
-  ): void {
+  executeCheckboxAction(comp: CanvasComponent, newCheckedState: boolean): void {
     const actionName = comp.onChangeAction;
     if (!actionName) return;
 
@@ -615,12 +609,10 @@ export class PropiedadesComponent implements OnInit {
   //metodos necesario para que un widget padre nunca sea mas pequeño que sus hijos
 
   // Nueva propiedad para almacenar tamaños originales de padres
-   originalParentSizes: Map<string, ComponentDimensions> = new Map();
-   maxParentSizes: Map<string, ComponentDimensions> = new Map();
+  originalParentSizes: Map<string, ComponentDimensions> = new Map();
+  maxParentSizes: Map<string, ComponentDimensions> = new Map();
   // 3. NUEVO MÉTODO para calcular el tamaño mínimo requerido por los hijos
-   calculateMinimumParentSize(
-    parent: CanvasComponent
-  ): ComponentDimensions {
+  calculateMinimumParentSize(parent: CanvasComponent): ComponentDimensions {
     if (!parent.children || parent.children.length === 0) {
       // Si no hay hijos, mantener el tamaño máximo alcanzado
       return (
@@ -670,9 +662,7 @@ export class PropiedadesComponent implements OnInit {
   /**
    * Valida el tamaño mínimo del padre basado en sus hijos y layout
    */
-   calculateMinimumParentSizeForLayout(
-    parent: any
-  ): ComponentDimensions {
+  calculateMinimumParentSizeForLayout(parent: any): ComponentDimensions {
     if (!parent.children || parent.children.length === 0) {
       return (
         this.maxParentSizes.get(parent.id) || {
@@ -773,7 +763,7 @@ export class PropiedadesComponent implements OnInit {
   }
 
   // MÉTODO para ajustar automáticamente el tamaño del padre
-   autoResizeParent(parentId: string): void {
+  autoResizeParent(parentId: string): void {
     if (!parentId || !this.roomCode) return;
 
     const page = this.pages[this.currentPantalla];
@@ -863,7 +853,7 @@ export class PropiedadesComponent implements OnInit {
 
   //border
   // 5.b) NUEVO MÉTODO para ajustar automáticamente el tamaño de los hijos
-   autoShrinkChildren(parentId: string): void {
+  autoShrinkChildren(parentId: string): void {
     if (!parentId || !this.roomCode) return;
     const page = this.pages[this.currentPantalla];
     const parent = this.findComponentById(page.components, parentId);
@@ -904,8 +894,8 @@ export class PropiedadesComponent implements OnInit {
     });
   }
 
-   // Método para salir de la sala
-   leaveRoom() {
+  // Método para salir de la sala
+  leaveRoom() {
     this.socketService.leaveRoom(this.roomCode);
 
     // Escuchar el evento cuando el usuario ha salido correctamente
@@ -925,4 +915,228 @@ export class PropiedadesComponent implements OnInit {
     const url = `https://deplo-u9v2.onrender.com/api/export/angular/${this.roomCode}`;
     window.open(url, '_blank'); // Abre la descarga del zip en otra pestaña
   }
+
+  // =============================================
+  // MÉTODOS PARA GESTIÓN DE TABLAS
+  // =============================================
+
+  /**
+   * Actualizar estructura de tabla
+   */
+  // Agregar estos métodos en propiedades.component.ts
+
+/**
+ * Actualiza la estructura de la tabla (filas/columnas)
+ */
+updateTableStructure(property: 'rows' | 'columns', newValue: number): void {
+  if (!this.selectedComponent || this.selectedComponent.type !== 'table') return;
+  
+  const table = this.selectedComponent;
+  const currentRows = table.rows || 3;
+  const currentColumns = table.columns || 3;
+  
+  if (property === 'rows') {
+    this.updateTableRows(table, newValue, currentColumns);
+  } else {
+    this.updateTableColumns(table, currentRows, newValue);
+  }
+  
+  // Actualizar las propiedades de la tabla
+  this.updateProperty('rows', property === 'rows' ? newValue : currentRows);
+  this.updateProperty('columns', property === 'columns' ? newValue : currentColumns);
+}
+
+/**
+ * Agrega una fila a la tabla
+ */
+addTableRow(): void {
+  if (!this.selectedComponent || this.selectedComponent.type !== 'table') return;
+  
+  const table = this.selectedComponent;
+  const columns = table.columns || 3;
+  const newRowIndex = table.children.length;
+  
+  this.addTableRowAtIndex(table, newRowIndex, columns);
+  
+  // Actualizar propiedades
+  this.updateProperty('rows', newRowIndex + 1);
+  
+  // Emitir actualización de estructura
+  this.emitTableStructureUpdate(table);
+}
+
+/**
+ * Elimina la última fila de la tabla
+ */
+removeTableRow(): void {
+  if (!this.selectedComponent || this.selectedComponent.type !== 'table') return;
+  
+  const table = this.selectedComponent;
+  if (table.children.length <= 1) return; // No eliminar si solo hay una fila
+  
+  table.children.pop();
+  this.updateProperty('rows', table.children.length);
+  
+  this.emitTableStructureUpdate(table);
+}
+
+/**
+ * Agrega una columna a la tabla
+ */
+addTableColumn(): void {
+  if (!this.selectedComponent || this.selectedComponent.type !== 'table') return;
+  
+  const table = this.selectedComponent;
+  const newColumnIndex = table.columns || 3;
+  
+  table.children.forEach((row, rowIndex) => {
+    this.addTableCellAtPosition(row, rowIndex, newColumnIndex);
+  });
+  
+  this.updateProperty('columns', newColumnIndex + 1);
+  this.emitTableStructureUpdate(table);
+}
+
+/**
+ * Elimina la última columna de la tabla
+ */
+removeTableColumn(): void {
+  if (!this.selectedComponent || this.selectedComponent.type !== 'table') return;
+  
+  const table = this.selectedComponent;
+  const currentColumns = table.columns || 3;
+  if (currentColumns <= 1) return; // No eliminar si solo hay una columna
+  
+  table.children.forEach(row => {
+    if (row.children.length > 0) {
+      row.children.pop();
+    }
+  });
+  
+  this.updateProperty('columns', currentColumns - 1);
+  this.emitTableStructureUpdate(table);
+}
+
+/**
+ * Actualiza las filas de la tabla
+ */
+private updateTableRows(table: CanvasComponent, newRows: number, columns: number): void {
+  const currentRows = table.children.length;
+  
+  if (newRows > currentRows) {
+    // Agregar filas
+    for (let rowIndex = currentRows; rowIndex < newRows; rowIndex++) {
+      this.addTableRowAtIndex(table, rowIndex, columns);
+    }
+  } else if (newRows < currentRows) {
+    // Eliminar filas
+    table.children = table.children.slice(0, newRows);
+  }
+}
+
+/**
+ * Actualiza las columnas de la tabla
+ */
+private updateTableColumns(table: CanvasComponent, rows: number, newColumns: number): void {
+  table.children.forEach((row, rowIndex) => {
+    const currentColumns = row.children.length;
+    
+    if (newColumns > currentColumns) {
+      // Agregar columnas
+      for (let colIndex = currentColumns; colIndex < newColumns; colIndex++) {
+        this.addTableCellAtPosition(row, rowIndex, colIndex);
+      }
+    } else if (newColumns < currentColumns) {
+      // Eliminar columnas
+      row.children = row.children.slice(0, newColumns);
+    }
+  });
+}
+
+/**
+ * Agrega una fila en un índice específico
+ */
+private addTableRowAtIndex(table: CanvasComponent, rowIndex: number, columns: number): void {
+  const rowId = this.generateUniqueId();
+  const tableCells: CanvasComponent[] = [];
+  
+  for (let colIndex = 0; colIndex < columns; colIndex++) {
+    const cellId = this.generateUniqueId();
+    const isHeaderRow = rowIndex === 0 && table.headerRow;
+    
+    const tableCell: CanvasComponent = {
+      id: cellId,
+      type: 'tableCell',
+      content: isHeaderRow ? `Encabezado ${colIndex + 1}` : `Celda ${rowIndex + 1}-${colIndex + 1}`,
+      rowIndex,
+      columnIndex: colIndex,
+      fontSize: isHeaderRow ? 14 : 12,
+      textColor: isHeaderRow ? '#000000' : '#333333',
+      fontFamily: 'inherit',
+      textAlign: 'center',
+      cellBackgroundColor: isHeaderRow ? '#f0f0f0' : '#ffffff',
+      children: [],
+      parentId: rowId,
+    };
+    
+    tableCells.push(tableCell);
+  }
+  
+  const tableRow: CanvasComponent = {
+    id: rowId,
+    type: 'tableRow',
+    rowIndex,
+    children: tableCells,
+    parentId: table.id,
+  };
+  
+  table.children.push(tableRow);
+}
+
+/**
+ * Agrega una celda en una posición específica
+ */
+private addTableCellAtPosition(row: CanvasComponent, rowIndex: number, colIndex: number): void {
+  const cellId = this.generateUniqueId();
+  const isHeaderRow = rowIndex === 0 && this.selectedComponent?.headerRow;
+  
+  const tableCell: CanvasComponent = {
+    id: cellId,
+    type: 'tableCell',
+    content: isHeaderRow ? `Encabezado ${colIndex + 1}` : `Celda ${rowIndex + 1}-${colIndex + 1}`,
+    rowIndex,
+    columnIndex: colIndex,
+    fontSize: isHeaderRow ? 14 : 12,
+    textColor: isHeaderRow ? '#000000' : '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: isHeaderRow ? '#f0f0f0' : '#ffffff',
+    children: [],
+    parentId: row.id,
+  };
+  
+  row.children.push(tableCell);
+}
+
+/**
+ * Emite la actualización de estructura de tabla al servidor
+ */
+private emitTableStructureUpdate(table: CanvasComponent): void {
+  if (!this.roomCode) return;
+  
+  const pageId = this.pages[this.currentPantalla].id;
+  this.socketService.updateTableStructure(
+    this.roomCode,
+    pageId,
+    table.id,
+    table.children
+  );
+}
+
+/**
+ * Genera un ID único para nuevos elementos
+ */
+private generateUniqueId(): string {
+  return 'table-' + Math.random().toString(36).substr(2, 9);
+}
 }

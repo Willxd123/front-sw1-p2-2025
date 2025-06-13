@@ -52,11 +52,7 @@ export class WidgetsComponent implements OnInit {
   errorMessage: string = '';
   usersInRoom: any[] = [];
 
-  showResponseModal = false;
-  httpResponse: any;
-
-  showQuestionModal = false;
-  questionText = '';
+ 
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
     this.socketService.onJoinedRoom().subscribe((room) => {
@@ -137,76 +133,74 @@ export class WidgetsComponent implements OnInit {
   cargarJsonEjemploLocal(): void {
     const jsonEjemplo: CanvasComponent[] = [
       {
-        id: '34844b26-f795-4e11-a654-ed0b9e5e4eed',
-        type: 'AppBar',
-        top: 0,
-        left: 0,
-        width: 360,
-        height: 70,
-        decoration: {
-          color: '#2196f3',
-          border: {
-            color: '#000000',
-            width: 0,
-          },
-          borderRadius: 0,
+        "id": "appbar-1",
+        "type": "AppBar",
+        "height": 56,
+        "decoration": {
+          "color": "#2196f3",
+          "border": { "color": "#000000", "width": 0 },
+          "borderRadius": 0
         },
-        children: [],
-        parentId: null,
+        "title": "Login",
+        "centerTitle": true,
+        "children": [],
+        "parentId": null
       },
       {
-        id: 'f4bb8bca-041b-4b15-a49a-34b3e7134bde',
-        type: 'Container',
-        top: 72,
-        left: 98,
-        width: 116,
-        height: 104,
-        decoration: {
-          color: '#3cb6c4',
-          border: {
-            color: '#b56481',
-            width: 1,
+        "id": "contenedor-login",
+        "type": "Container",
+        "top": 100,
+        "left": 30,
+        "width": 300,
+        "height": 200,
+        "childrenLayout": "column",
+        "gap": 16,
+        "decoration": {
+          "color": "#ffffff",
+          "border": {
+            "color": "#000000",
+            "width": 1
           },
-          borderRadius: 5,
+          "borderRadius": 12
         },
-        children: [],
-        parentId: null,
-        childrenLayout: '',
-        gap: 8,
-      },
-      {
-        id: '7284a3de-716a-458c-a2bf-b430eead1f52',
-        type: 'DropdownButton',
-        top: 390,
-        left: 78,
-        width: 120,
-        height: 40,
-        decoration: {
-          color: '#800040',
-          border: {
-            color: '#000000',
-            width: 1,
+        "paddingAll": 16,
+        "children": [
+          {
+            "id": "input-email",
+            "type": "TextField",
+            "height": 56,
+            "width": 268,
+            "hintText": "Correo electrónico",
+            "inputType": "email",
+            "fontSize": 14,
+            "decoration": {
+              "color": "#ffffff",
+              "border": { "color": "#cccccc", "width": 1 },
+              "borderRadius": 6
+            },
+            "textColor": "#000000",
+            "children": [],
+            "parentId": "contenedor-login"
           },
-          borderRadius: 4,
-        },
-        options: ['Opción 1e', 'Opción 2sd'],
-        selectedOption: 'Opción 1',
-        children: [],
-        parentId: null,
-      },
-      {
-        id: 'afa51736-657e-4b7f-a002-8b94dc41acf8',
-        type: 'Text',
-        text: 'Título',
-        fontSize: 16,
-        autoSize: true,
-        width: 44,
-        height: 30,
-        top: 241,
-        left: 214,
-        children: [],
-        parentId: null,
-      },
+          {
+            "id": "boton-enviar",
+            "type": "TextButton",
+            "text": "Iniciar Sesión",
+            "fontSize": 16,
+            "width": 268,
+            "height": 48,
+            "decoration": {
+              "color": "#2196f3",
+              "border": { "color": "#000000", "width": 0 },
+              "borderRadius": 6
+            },
+            "textColor": "#ffffff",
+            "children": [],
+            "parentId": "contenedor-login"
+          }
+        ],
+        "parentId": null
+      }
     ];
 
     // Obtener el ID de la página actual
@@ -281,8 +275,8 @@ export class WidgetsComponent implements OnInit {
       autoSize: true,
       width: 44,
       height: 30,
-      top: 10,
-      left: 10,
+      top: 200,
+      left: 100,
       children: [],
       parentId: null,
     };
@@ -436,7 +430,87 @@ export class WidgetsComponent implements OnInit {
     const pageId = this.pages[this.currentPantalla].id;
     this.socketService.addCanvasComponent(this.roomCode, pageId, newTextField);
   }
+/**
+ * Agregar tabla
+ */
+addTable(): void {
+  const tableId = uuidv4();
+  
+  // Crear las celdas para una tabla 3x3 por defecto
+  const tableRows: CanvasComponent[] = [];
+  
+  for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+    const rowId = uuidv4();
+    const tableCells: CanvasComponent[] = [];
+    
+    for (let colIndex = 0; colIndex < 3; colIndex++) {
+      const cellId = uuidv4();
+      const isHeaderRow = rowIndex === 0;
+      
+      const tableCell: CanvasComponent = {
+        id: cellId,
+        type: 'tableCell',
+        content: isHeaderRow ? `Encabezado ${colIndex + 1}` : `Celda ${rowIndex}-${colIndex + 1}`,
+        rowIndex,
+        columnIndex: colIndex,
+        fontSize: isHeaderRow ? 14 : 12,
+        textColor: isHeaderRow ? '#000000' : '#333333',
+        fontFamily: 'inherit',
+        textAlign: 'center',
+        cellBackgroundColor: isHeaderRow ? '#f0f0f0' : '#ffffff',
+        children: [],
+        parentId: rowId,
+      };
+      
+      tableCells.push(tableCell);
+    }
+    
+    const tableRow: CanvasComponent = {
+      id: rowId,
+      type: 'tableRow',
+      rowIndex,
+      children: tableCells,
+      parentId: tableId,
+    };
+    
+    tableRows.push(tableRow);
+  }
 
+  const newTable: CanvasComponent = {
+    id: tableId,
+    type: 'table',
+    top: 100,
+    left: 50,
+    right: 50, // Para que se adapte al ancho disponible
+    width: 260, // Ancho base, se puede ajustar
+    height: 150, // Alto base, se puede ajustar
+    rows: 3,
+    columns: 3,
+    tableBorder: {
+      color: '#cccccc',
+      width: 1,
+    },
+    cellPadding: 8,
+    headerRow: true,
+    headerBackgroundColor: '#f0f0f0',
+    alternateRowColor: '#f9f9f9',
+    defaultVerticalAlignment: 'middle',
+    columnWidths: [1, 1, 1], // Anchos proporcionales iguales
+    decoration: {
+      color: '#ffffff',
+      border: {
+        color: '#cccccc',
+        width: 1,
+      },
+      borderRadius: 4,
+    },
+    children: tableRows,
+    parentId: null,
+  };
+
+  const pageId = this.pages[this.currentPantalla].id;
+  this.socketService.addCanvasComponent(this.roomCode, pageId, newTable);
+}
   // =============================================
   // MÉTODOS UTILITARIOS
   // =============================================
@@ -550,60 +624,5 @@ export class WidgetsComponent implements OnInit {
 
     console.log(`🧹 Limpiando página: ${currentPage.name} (${currentPage.id})`);
   }
-  submitQuestion() {
-    if (this.questionText.trim()) {
-      this.showQuestionModal = false;
-      const body = { question: this.questionText };
-      this.makeHttpRequest();
-      this.questionText = ''; // Limpiar el texto después de enviar
-    }
-  }
 
-  makeHttpRequest() {
-    const body = { question: this.questionText };
-    this.http.post('http://localhost:5000/query', body).subscribe({
-      next: (response: any) => {
-        try {
-          // Parsear la respuesta y asignarla a jsonEjemplo
-          const components = JSON.parse(response.response);
-          
-          // Obtener el ID de la página actual
-          const pageId = this.pages[this.currentPantalla].id;
-          
-          // 🧹 PASO 1: Limpiar la pantalla actual usando socket service
-          this.socketService.clearPage(this.roomCode, pageId);
-          
-          // 🎯 PASO 2: Agregar nuevos componentes después de un pequeño delay
-          // para asegurar que la limpieza se complete primero
-          setTimeout(() => {
-            components.forEach((component: any, index: number) => {
-              // Generar nuevo ID para evitar conflictos
-              const componentWithNewId = {
-                ...component,
-                id: uuidv4()
-              };
-              
-              // Agregar con un pequeño delay para evitar conflictos
-              setTimeout(() => {
-                this.socketService.addCanvasComponent(this.roomCode, pageId, componentWithNewId);
-              }, index * 100); // 100ms entre cada componente
-            });
-          }, 200); // 200ms de delay inicial para que la limpieza se complete
-          
-          this.showResponseModal = true;
-          this.httpResponse = `Diseño cargado exitosamente - ${components.length} componentes agregados`;
-          console.log('🤖 Componentes de IA cargados:', components.length, 'elementos');
-          console.log('🧹 Pantalla limpiada y nuevos componentes agregados');
-          
-        } catch (error) {
-          this.httpResponse = "Error al procesar la respuesta: " + error;
-          this.showResponseModal = true;
-        }
-      },
-      error: (error) => {
-        this.httpResponse = error;
-        this.showResponseModal = true;
-      }
-    });
-  }
 }

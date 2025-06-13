@@ -62,47 +62,108 @@
           <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
           
           <div class="relative bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 hover:bg-slate-800/70 transition-all duration-300">
-            <div class="flex items-center gap-4 mb-6">
-              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
+            <!-- Normal State -->
+            <div *ngIf="!isCreatingRoom" class="space-y-6">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold text-slate-200">Crear Nueva Sala</h2>
+                  <p class="text-sm text-slate-400">Inicia un nuevo proyecto colaborativo</p>
+                </div>
               </div>
-              <div>
-                <h2 class="text-xl font-bold text-slate-200">Crear Nueva Sala</h2>
-                <p class="text-sm text-slate-400">Inicia un nuevo proyecto colaborativo</p>
-              </div>
+
+              <form (ngSubmit)="createRoom()" class="space-y-6">
+                <div>
+                  <label for="roomName" class="block text-sm font-medium text-slate-300 mb-2">
+                    Nombre del proyecto
+                  </label>
+                  <input 
+                    [(ngModel)]="roomName" 
+                    name="roomName" 
+                    type="text" 
+                    id="roomName" 
+                    placeholder="Mi proyecto increíble"
+                    class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    required
+                  />
+                </div>
+                
+                <button 
+                  type="submit"
+                  class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                  </svg>
+                  Crear Sala
+                </button>
+              </form>
             </div>
 
-            <form (ngSubmit)="createRoom()" class="space-y-6">
-              <div>
-                <label for="roomName" class="block text-sm font-medium text-slate-300 mb-2">
-                  Nombre del proyecto
-                </label>
-                <input 
-                  [(ngModel)]="roomName" 
-                  name="roomName" 
-                  type="text" 
-                  id="roomName" 
-                  placeholder="Mi proyecto increíble"
-                  class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  required
-                />
+            <!-- Loading State -->
+            <div *ngIf="isCreatingRoom" class="space-y-6 animate-in fade-in-0 duration-300">
+              <div class="text-center">
+                <!-- Animated Icon -->
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <svg class="w-8 h-8 text-white animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-slate-200 mb-2">Creando tu sala</h3>
+                <p class="text-sm text-slate-400 mb-6">{{ currentLoadingStep }}</p>
               </div>
-              
+
+              <!-- Progress Bar -->
+              <div class="space-y-3">
+                <div class="flex justify-between text-xs text-slate-400">
+                  <span>Progreso</span>
+                  <span>{{ creationProgress | number:'1.0-0' }}%</span>
+                </div>
+                <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
+                  <div 
+                    class="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 ease-out"
+                    [style.width.%]="creationProgress"
+                  ></div>
+                </div>
+              </div>
+
+              <!-- Loading Steps Visualization -->
+              <div class="space-y-2">
+                <div *ngFor="let step of ['Creando sala...', 'Configurando espacio...', 'Preparando herramientas...', 'Iniciando colaboración...']; let i = index"
+                     class="flex items-center gap-3 text-sm"
+                     [class.text-slate-400]="creationProgress < (i + 1) * 20"
+                     [class.text-blue-400]="creationProgress >= (i + 1) * 20">
+                  <div class="w-2 h-2 rounded-full border-2 transition-all duration-300"
+                       [class.border-slate-600]="creationProgress < (i + 1) * 20"
+                       [class.bg-blue-400]="creationProgress >= (i + 1) * 20"
+                       [class.border-blue-400]="creationProgress >= (i + 1) * 20">
+                  </div>
+                  <span>{{ step }}</span>
+                  <svg *ngIf="creationProgress >= (i + 1) * 20" class="w-4 h-4 text-green-400 ml-auto animate-in fade-in-0 duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Cancel Button -->
               <button 
-                type="submit"
-                class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-blue-500/20"
+                (click)="cancelCreation()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2 text-slate-400 hover:text-slate-300 transition-colors"
               >
-                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
-                Crear Sala
+                Cancelar
               </button>
-            </form>
+            </div>
 
             <!-- Error message -->
-            <div *ngIf="errorMessage" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <div *ngIf="errorMessage && !isCreatingRoom" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg animate-in slide-in-from-top-2 duration-300">
               <p class="text-sm text-red-400">{{ errorMessage }}</p>
             </div>
           </div>
@@ -114,48 +175,73 @@
           <div class="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
           
           <div class="relative bg-slate-800/50 backdrop-blur border border-slate-700/50 rounded-2xl p-8 hover:bg-slate-800/70 transition-all duration-300">
-            <div class="flex items-center gap-4 mb-6">
-              <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Normal State -->
+            <div *ngIf="!isJoiningRoom">
+              <div class="flex items-center gap-4 mb-6">
+                <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-xl font-bold text-slate-200">Unirse a Sala</h2>
+                  <p class="text-sm text-slate-400">Colabora en un proyecto existente</p>
+                </div>
+              </div>
+
+              <form (ngSubmit)="joinRoom()" class="space-y-6">
+                <div>
+                  <label for="roomCode" class="block text-sm font-medium text-slate-300 mb-2">
+                    Código de la sala
+                  </label>
+                  <input 
+                    [(ngModel)]="roomCode" 
+                    name="roomCode" 
+                    type="text" 
+                    id="roomCode" 
+                    placeholder="ABC123"
+                    class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono uppercase"
+                    required
+                    maxlength="6"
+                  />
+                </div>
+                
+                <button 
+                  type="submit"
+                  class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-emerald-500/20"
+                >
+                  <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                  </svg>
+                  Ingresar
+                </button>
+              </form>
+            </div>
+
+            <!-- Loading State para Join -->
+            <div *ngIf="isJoiningRoom" class="space-y-6 text-center animate-in fade-in-0 duration-300">
+              <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+                <svg class="w-8 h-8 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                 </svg>
               </div>
+              
               <div>
-                <h2 class="text-xl font-bold text-slate-200">Unirse a Sala</h2>
-                <p class="text-sm text-slate-400">Colabora en un proyecto existente</p>
+                <h3 class="text-lg font-semibold text-slate-200 mb-2">Uniéndose a la sala</h3>
+                <p class="text-sm text-slate-400">Código: <span class="font-mono text-emerald-400">{{ roomCode }}</span></p>
+              </div>
+
+              <div class="flex justify-center">
+                <div class="flex space-x-1">
+                  <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                  <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                  <div class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"></div>
+                </div>
               </div>
             </div>
 
-            <form (ngSubmit)="joinRoom()" class="space-y-6">
-              <div>
-                <label for="roomCode" class="block text-sm font-medium text-slate-300 mb-2">
-                  Código de la sala
-                </label>
-                <input 
-                  [(ngModel)]="roomCode" 
-                  name="roomCode" 
-                  type="text" 
-                  id="roomCode" 
-                  placeholder="ABC123"
-                  class="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-200 placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono uppercase"
-                  required
-                  maxlength="6"
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                class="w-full group flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-emerald-500/20"
-              >
-                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                </svg>
-                Ingresar
-              </button>
-            </form>
-
             <!-- Error message -->
-            <div *ngIf="joinErrorMessage" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <div *ngIf="joinErrorMessage && !isJoiningRoom" class="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg animate-in slide-in-from-top-2 duration-300">
               <p class="text-sm text-red-400">{{ joinErrorMessage }}</p>
             </div>
           </div>

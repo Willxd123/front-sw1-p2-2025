@@ -339,6 +339,30 @@
           </div>
           <span class="text-xs font-medium text-slate-200">Checkbox</span>
         </button>
+        <!-- Table -->
+<button
+class="group flex flex-col items-center gap-2 p-3 bg-teal-600/10 hover:bg-teal-600/20 border border-teal-500/30 rounded-lg transition-all duration-200 hover:scale-105"
+(click)="addTable()"
+>
+<div
+  class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center group-hover:bg-teal-500 transition-colors"
+>
+  <svg
+    class="w-4 h-4 text-white"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V10z"
+    />
+  </svg>
+</div>
+<span class="text-xs font-medium text-slate-200">Tabla</span>
+</button>
       </div>
 
       <!-- AppBar - botón especial -->
@@ -587,38 +611,3 @@
     </div>
   </div>
 </aside>
-<!-- Modal para ingresar la pregunta -->
-<div *ngIf="showQuestionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  <div class="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">Ingresa tu consulta</h3>
-      <button 
-        class="text-gray-500 hover:text-gray-700"
-        (click)="showQuestionModal = false"
-      >
-        ✕
-      </button>
-    </div>
-    <div class="mb-4">
-      <textarea
-        [(ngModel)]="questionText"
-        class="w-full h-32 p-2 border rounded"
-        placeholder="Describe el diseño que necesitas..."
-      ></textarea>
-    </div>
-    <div class="flex justify-end gap-2">
-      <button
-        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-        (click)="showQuestionModal = false"
-      >
-        Cancelar
-      </button>
-      <button
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        (click)="submitQuestion()"
-      >
-        Enviar
-      </button>
-    </div>
-  </div>
-</div>
