@@ -435,55 +435,192 @@ export class WidgetsComponent implements OnInit {
  */
 addTable(): void {
   const tableId = uuidv4();
-  
-  // Crear las celdas para una tabla 3x3 por defecto
-  const tableRows: CanvasComponent[] = [];
-  
-  for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
-    const rowId = uuidv4();
-    const tableCells: CanvasComponent[] = [];
-    
-    for (let colIndex = 0; colIndex < 3; colIndex++) {
-      const cellId = uuidv4();
-      const isHeaderRow = rowIndex === 0;
-      
-      const tableCell: CanvasComponent = {
-        id: cellId,
-        type: 'tableCell',
-        content: isHeaderRow ? `Encabezado ${colIndex + 1}` : `Celda ${rowIndex}-${colIndex + 1}`,
-        rowIndex,
-        columnIndex: colIndex,
-        fontSize: isHeaderRow ? 14 : 12,
-        textColor: isHeaderRow ? '#000000' : '#333333',
-        fontFamily: 'inherit',
-        textAlign: 'center',
-        cellBackgroundColor: isHeaderRow ? '#f0f0f0' : '#ffffff',
-        children: [],
-        parentId: rowId,
-      };
-      
-      tableCells.push(tableCell);
-    }
-    
-    const tableRow: CanvasComponent = {
-      id: rowId,
-      type: 'tableRow',
-      rowIndex,
-      children: tableCells,
-      parentId: tableId,
-    };
-    
-    tableRows.push(tableRow);
-  }
 
+  // ========== FILA 0 (ENCABEZADOS) ==========
+  const row0Id = uuidv4();
+  
+  // Celda 0,0 - Encabezado 1
+  const cell_0_0: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Encabezado 1',
+    rowIndex: 0,
+    columnIndex: 0,
+    fontSize: 14,
+    textColor: '#000000',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#f0f0f0',
+    children: [],
+    parentId: row0Id,
+  };
+
+  // Celda 0,1 - Encabezado 2
+  const cell_0_1: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Encabezado 2',
+    rowIndex: 0,
+    columnIndex: 1,
+    fontSize: 14,
+    textColor: '#000000',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#f0f0f0',
+    children: [],
+    parentId: row0Id,
+  };
+
+  // Celda 0,2 - Encabezado 3
+  const cell_0_2: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Encabezado 3',
+    rowIndex: 0,
+    columnIndex: 2,
+    fontSize: 14,
+    textColor: '#000000',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#f0f0f0',
+    children: [],
+    parentId: row0Id,
+  };
+
+  const tableRow0: CanvasComponent = {
+    id: row0Id,
+    type: 'tableRow',
+    rowIndex: 0,
+    children: [cell_0_0, cell_0_1, cell_0_2],
+    parentId: tableId,
+  };
+
+  // ========== FILA 1 ==========
+  const row1Id = uuidv4();
+
+  // Celda 1,0 - Celda 1.1
+  const cell_1_0: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 1.1',
+    rowIndex: 1,
+    columnIndex: 0,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row1Id,
+  };
+
+  // Celda 1,1 - Celda 1.2
+  const cell_1_1: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 1.2',
+    rowIndex: 1,
+    columnIndex: 1,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row1Id,
+  };
+
+  // Celda 1,2 - Celda 1.3
+  const cell_1_2: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 1.3',
+    rowIndex: 1,
+    columnIndex: 2,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row1Id,
+  };
+
+  const tableRow1: CanvasComponent = {
+    id: row1Id,
+    type: 'tableRow',
+    rowIndex: 1,
+    children: [cell_1_0, cell_1_1, cell_1_2],
+    parentId: tableId,
+  };
+
+  // ========== FILA 2 ==========
+  const row2Id = uuidv4();
+
+  // Celda 2,0 - Celda 2.1
+  const cell_2_0: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 2.1',
+    rowIndex: 2,
+    columnIndex: 0,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row2Id,
+  };
+
+  // Celda 2,1 - Celda 2.2
+  const cell_2_1: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 2.2',
+    rowIndex: 2,
+    columnIndex: 1,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row2Id,
+  };
+
+  // Celda 2,2 - Celda 2.3
+  const cell_2_2: CanvasComponent = {
+    id: uuidv4(),
+    type: 'tableCell',
+    content: 'Celda 2.3',
+    rowIndex: 2,
+    columnIndex: 2,
+    fontSize: 12,
+    textColor: '#333333',
+    fontFamily: 'inherit',
+    textAlign: 'center',
+    cellBackgroundColor: '#ffffff',
+    children: [],
+    parentId: row2Id,
+  };
+
+  const tableRow2: CanvasComponent = {
+    id: row2Id,
+    type: 'tableRow',
+    rowIndex: 2,
+    children: [cell_2_0, cell_2_1, cell_2_2],
+    parentId: tableId,
+  };
+
+  // ========== TABLA COMPLETA ==========
   const newTable: CanvasComponent = {
     id: tableId,
     type: 'table',
     top: 100,
     left: 50,
-    right: 50, // Para que se adapte al ancho disponible
-    width: 260, // Ancho base, se puede ajustar
-    height: 150, // Alto base, se puede ajustar
+    width: 260,
+    height: 150,
     rows: 3,
     columns: 3,
     tableBorder: {
@@ -495,7 +632,7 @@ addTable(): void {
     headerBackgroundColor: '#f0f0f0',
     alternateRowColor: '#f9f9f9',
     defaultVerticalAlignment: 'middle',
-    columnWidths: [1, 1, 1], // Anchos proporcionales iguales
+    columnWidths: [1, 1, 1],
     decoration: {
       color: '#ffffff',
       border: {
@@ -504,7 +641,7 @@ addTable(): void {
       },
       borderRadius: 4,
     },
-    children: tableRows,
+    children: [tableRow0, tableRow1, tableRow2],
     parentId: null,
   };
 
