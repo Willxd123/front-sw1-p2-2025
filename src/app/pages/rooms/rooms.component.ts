@@ -61,11 +61,11 @@ export class RoomsComponent implements OnInit {
   };
 
   // AI Assistant properties
-showAIHub: boolean = false;
-showTextModal: boolean = false;
-showImageModal: boolean = false;
-questionText: string = '';
-selectedImage: File | null = null;
+  showAIHub: boolean = false;
+  showTextModal: boolean = false;
+  showImageModal: boolean = false;
+  questionText: string = '';
+  selectedImage: File | null = null;
 
   //instancias
   pantallaCustomRoute: string = '';
@@ -96,6 +96,8 @@ selectedImage: File | null = null;
   errorMessage: string = '';
   usersInRoom: any[] = [];
   showParticipants: boolean = false;
+  // propiedad para el estado de loading
+  isInitializing: boolean = true;
   ngOnInit(): void {
     this.roomCode = this.route.snapshot.paramMap.get('code') || '';
 
@@ -112,26 +114,39 @@ selectedImage: File | null = null;
       } else {
         this.currentPantalla = 0;
       }
-
+      // Finalizar loading cuando se cargan las páginas
+      this.isInitializing = false;
       this.cdr.detectChanges();
     });
 
-// Escuchar cuando se limpia una página
-this.socketService.onPageCleared().subscribe(({ pageId }) => {
-  const page = this.pages.find((p) => p.id === pageId);
-  if (page) {
-    // Limpiar componentes de la página
-    page.components = [];
-    
-    // Si es la página actual, deseleccionar componente
-    if (page.id === this.pages[this.currentPantalla]?.id) {
-      this.selectedComponent = null;
-    }
-    
-    console.log(`🧹 Página limpiada: ${page.name}`);
-    this.cdr.detectChanges();
-  }
-});
+    // Escuchar cuando se limpia una página
+    this.socketService.onPageCleared().subscribe(({ pageId }) => {
+      const page = this.pages.find((p) => p.id === pageId);
+      if (page) {
+        // Limpiar componentes de la página
+        page.components = [];
+
+        // Si es la página actual, deseleccionar componente
+        if (page.id === this.pages[this.currentPantalla]?.id) {
+          this.selectedComponent = null;
+        }
+
+        console.log(`🧹 Página limpiada: ${page.name}`);
+        this.cdr.detectChanges();
+      }
+    });
+    // Esto se ejecutará si no se recibe onInitialCanvasLoad en 2 segundos
+    setTimeout(() => {
+      if (this.pages.length === 0) {
+        console.log(
+          '🚨 Inicialización de emergencia: No se recibieron páginas iniciales'
+        );
+        this.addPage(); // Crear página inicial si no hay ninguna
+      }
+      // 🎯 Siempre finalizar loading después del timeout
+      this.isInitializing = false;
+      this.cdr.detectChanges();
+    }, 2000);
 
     // Escucha nuevas páginas agregadas por otros usuarios
     this.socketService.onPageAdded().subscribe((page: Page) => {
@@ -140,9 +155,14 @@ this.socketService.onPageCleared().subscribe(({ pageId }) => {
         this.pages.push(page);
         this.currentPantalla = this.pages.length - 1;
         this.selectedComponent = null;
+        // 🎯 Si no había páginas y ahora llega una, finalizar loading
+        if (this.isInitializing) {
+          this.isInitializing = false;
+        }
         this.cdr.detectChanges();
       }
     });
+
     this.socketService.onPageRemoved().subscribe((pageId: string) => {
       this.pages = this.pages.filter((p) => p.id !== pageId);
       if (this.currentPantalla >= this.pages.length) {
@@ -751,6 +771,15 @@ this.socketService.onPageCleared().subscribe(({ pageId }) => {
       style.justifyContent = 'center';
     }
 
+    if (comp.type === 'table') {
+      // Configuración específica para el contenedor de tabla
+      style.backgroundColor = 'transparent'; // El fondo lo maneja la tabla interna
+      style.border = 'none'; // Sin borde en el contenedor
+      style.borderRadius = '0px';
+      style.overflow = 'visible'; // Permitir que la tabla se vea completa
+      
+      // NO hacer return aquí - permitir que continúe con el posicionamiento normal
+    }
     // ——— 4) Buscar padre ———————————————————————————————————————————————————
     const pageIndex = this.isPreviewMode
       ? this.previewPantallaIndex
@@ -1046,7 +1075,46 @@ this.socketService.onPageCleared().subscribe(({ pageId }) => {
 
     return style;
   }
+  getTableCellStyle(
+    table: CanvasComponent,
+    cell: CanvasComponent,
+    rowIndex: number,
+    colIndex: number
+  ): any {
+    const cellStyle: any = {
+      padding: (table.cellPadding || 8) + 'px',
+      border: `${table.tableBorder?.width || 1}px solid ${
+        table.tableBorder?.color || '#cccccc'
+      }`,
+      fontSize: (cell.fontSize || 12) + 'px',
+      color: cell.textColor || '#333333',
+      fontFamily: cell.fontFamily || 'inherit',
+      textAlign: cell.textAlign || 'center',
+      verticalAlign: this.getVerticalAlignment(table),
+      backgroundColor: this.getCellBackgroundColor(table, cell, rowIndex),
+      cursor: this.isPreviewMode ? 'default' : 'pointer',
+      transition: 'background-color 0.2s ease',
+      minWidth: this.getColumnWidth(table, colIndex) + 'px',
+      maxWidth: this.getColumnWidth(table, colIndex) + 'px',
+      wordWrap: 'break-word',
+      lineHeight: '1.4',
+    };
 
+    // Agregar hover effect si no está en modo preview
+    if (!this.isPreviewMode) {
+      cellStyle[':hover'] = {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      };
+    }
+
+    // Estilo especial para encabezados
+    if (rowIndex === 0 && table.headerRow) {
+      cellStyle.fontWeight = 'bold';
+      cellStyle.fontSize = (cell.fontSize || 14) + 'px';
+    }
+
+    return cellStyle;
+  }
   // ——— MÉTODOS AUXILIARES PARA FLEXBOX ———————————————————————————————————————
 
   /* Método para obtener justify-content del contenedor padre en este caso por mas 
@@ -1180,6 +1248,160 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
     return children.filter((child) => child.type === 'Text');
   }
 
+  //tabla--------------------------
+  /**
+   * Selecciona el componente tabla completo (un clic)
+   */
+  selectTableComponent(table: CanvasComponent, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedComponent = table;
+    this.contextMenu.visible = false;
+    console.log('🔵 Tabla seleccionada:', table.id);
+  }
+
+  /**
+   * Selecciona una celda específica de la tabla
+   */
+  selectTableCell(cell: CanvasComponent, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedComponent = cell;
+  }
+
+  /**
+   * Habilita la edición de una celda
+   */
+  editTableCell(cell: CanvasComponent, event: MouseEvent): void {
+    event.stopPropagation();
+    const target = event.target as HTMLElement;
+    target.focus();
+  }
+
+  /**
+   * Actualiza el contenido de una celda cuando termina la edición
+   */
+  updateCellContent(cell: CanvasComponent, event: Event): void {
+    const target = event.target as HTMLElement;
+    const newContent = target.textContent || '';
+
+    if (cell.content !== newContent) {
+      const pageId = this.pages[this.currentPantalla].id;
+      this.socketService.updateComponentProperties(
+        this.roomCode,
+        pageId,
+        cell.id,
+        { content: newContent }
+      );
+    }
+  }
+
+  /**
+   * Selecciona la tabla completa (un clic)
+   */
+  selectTable(table: CanvasComponent, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedComponent = table;
+    this.contextMenu.visible = false;
+    console.log('🔵 Tabla seleccionada:', table.id, 'Tipo:', table.type);
+  }
+
+  /**
+   * Maneja el clic en una celda - evita que se seleccione la tabla cuando se hace clic en celda
+   */
+  handleCellClick(
+    cell: CanvasComponent,
+    table: CanvasComponent,
+    event: MouseEvent
+  ): void {
+    event.stopPropagation(); // Evita que se propague al click de la tabla
+    // En un clic simple, no hacemos nada especial, solo prevenimos la propagación
+    // La tabla seguirá seleccionada si ya lo estaba
+  }
+
+  /**
+   * Selecciona una celda específica (doble clic)
+   */
+  selectCell(cell: CanvasComponent, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedComponent = cell;
+    this.contextMenu.visible = false;
+    console.log(
+      '🔸 Celda seleccionada:',
+      cell.id,
+      'Tipo:',
+      cell.type,
+      `Fila: ${(cell.rowIndex || 0) + 1}, Columna: ${
+        (cell.columnIndex || 0) + 1
+      }`,
+      'Contenido:',
+      cell.content
+    );
+  }
+
+  /**
+   * Obtiene el color de fondo de una celda según su posición y configuración de la tabla
+   */
+  getCellBackgroundColor(
+    table: CanvasComponent,
+    cell: CanvasComponent,
+    rowIndex: number
+  ): string {
+    // Prioridad 1: Color específico de la celda
+    if (cell.cellBackgroundColor && cell.cellBackgroundColor !== '#ffffff') {
+      return cell.cellBackgroundColor;
+    }
+
+    // Prioridad 2: Primera fila como encabezado
+    if (rowIndex === 0 && table.headerRow && table.headerBackgroundColor) {
+      return table.headerBackgroundColor;
+    }
+
+    // Prioridad 3: Color alternado para filas (excluyendo encabezado)
+    if (table.alternateRowColor && rowIndex > 0 && rowIndex % 2 === 0) {
+      return table.alternateRowColor;
+    }
+
+    // Color por defecto
+    return '#ffffff';
+  }
+
+  /**
+   * Obtiene la alineación vertical de las celdas
+   */
+  getVerticalAlignment(table: CanvasComponent): string {
+    switch (table.defaultVerticalAlignment) {
+      case 'top':
+        return 'top';
+      case 'bottom':
+        return 'bottom';
+      case 'middle':
+      default:
+        return 'middle';
+    }
+  }
+
+  /**
+   * Obtiene el ancho de una columna específica
+   */
+  getColumnWidth(table: CanvasComponent, columnIndex: number): number {
+    // Si hay anchos específicos definidos
+    if (table.columnWidths && table.columnWidths[columnIndex]) {
+      const totalWidth = table.width || 260;
+      const totalProportion = table.columnWidths.reduce(
+        (sum, width) => sum + width,
+        0
+      );
+      return Math.max(
+        60,
+        (totalWidth * table.columnWidths[columnIndex]) / totalProportion
+      );
+    }
+
+    // Ancho igual para todas las columnas
+    const totalWidth = table.width || 260;
+    const numColumns = table.columns || 3;
+    return Math.max(60, totalWidth / numColumns); // Mínimo 60px por columna
+  }
+
   //fin border
   downloadAngularProject() {
     const url = `http://localhost:3000/api/export/flutter/${this.roomCode}`;
@@ -1190,52 +1412,51 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
     this.widgets.cargarJsonEjemploLocal();
   }
 
-
   //metodos auxiliares para la ia
   openTextPrompt(): void {
     this.showAIHub = false;
     this.showTextModal = true;
   }
-  
+
   openImageUpload(): void {
     this.showAIHub = false;
     this.showImageModal = true;
   }
-  
+
   closeTextModal(): void {
     this.showTextModal = false;
     this.questionText = '';
   }
-  
+
   closeImageModal(): void {
     this.showImageModal = false;
     this.selectedImage = null;
   }
-  
+
   onImageSelect(event: any): void {
     const file = event.target.files[0];
     if (file) {
       this.selectedImage = file;
     }
   }
-  
+
   generateFromText(): void {
     if (!this.questionText.trim()) return;
-    
+
     this.makeHttpRequest();
     this.closeTextModal();
   }
-  
+
   generateFromImage(): void {
     if (!this.selectedImage) return;
-    
+
     // Tu futura implementación para imágenes
     const formData = new FormData();
     formData.append('image', this.selectedImage);
-    
+
     // Por ahora, solo cerramos el modal
     this.closeImageModal();
-    
+
     // Aquí irá tu lógica de imagen cuando esté lista
     console.log('Imagen seleccionada para procesar:', this.selectedImage.name);
   }
@@ -1251,13 +1472,13 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
         try {
           // Parsear la respuesta y asignarla a jsonEjemplo
           const components = JSON.parse(response.response);
-          
+
           // Obtener el ID de la página actual
           const pageId = this.pages[this.currentPantalla].id;
-          
+
           // 🧹 PASO 1: Limpiar la pantalla actual usando socket service
           this.socketService.clearPage(this.roomCode, pageId);
-          
+
           // 🎯 PASO 2: Agregar nuevos componentes después de un pequeño delay
           // para asegurar que la limpieza se complete primero
           setTimeout(() => {
@@ -1265,30 +1486,37 @@ que el padre este aliniado en cualquier posicion, sus hijos siempre estaran en e
               // Generar nuevo ID para evitar conflictos
               const componentWithNewId = {
                 ...component,
-                id: uuidv4()
+                id: uuidv4(),
               };
-              
+
               // Agregar con un pequeño delay para evitar conflictos
               setTimeout(() => {
-                this.socketService.addCanvasComponent(this.roomCode, pageId, componentWithNewId);
+                this.socketService.addCanvasComponent(
+                  this.roomCode,
+                  pageId,
+                  componentWithNewId
+                );
               }, index * 100); // 100ms entre cada componente
             });
           }, 200); // 200ms de delay inicial para que la limpieza se complete
-          
+
           this.showResponseModal = true;
           this.httpResponse = `Diseño cargado exitosamente - ${components.length} componentes agregados`;
-          console.log('🤖 Componentes de IA cargados:', components.length, 'elementos');
+          console.log(
+            '🤖 Componentes de IA cargados:',
+            components.length,
+            'elementos'
+          );
           console.log('🧹 Pantalla limpiada y nuevos componentes agregados');
-          
         } catch (error) {
-          this.httpResponse = "Error al procesar la respuesta: " + error;
+          this.httpResponse = 'Error al procesar la respuesta: ' + error;
           this.showResponseModal = true;
         }
       },
       error: (error) => {
         this.httpResponse = error;
         this.showResponseModal = true;
-      }
+      },
     });
   }
 }

@@ -85,4 +85,24 @@ export interface CanvasComponent {
   };
   // O alternativamente, padding uniforme:
   paddingAll?: number;
+  // Nuevas propiedades específicas para Table:
+  right?: number; // Posición derecha (opcional)
+  rows?: number; // Número de filas
+  columns?: number; // Número de columnas
+  tableBorder?: {
+    color: string;
+    width: number;
+  };
+  cellPadding?: number; // Padding interno de las celdas
+  headerRow?: boolean; // Si la primera fila es encabezado
+  headerBackgroundColor?: string; // Color de fondo del encabezado
+  alternateRowColor?: string; // Color alternado para filas
+  columnWidths?: number[]; // Anchos específicos de columnas
+  defaultVerticalAlignment?: 'top' | 'middle' | 'bottom'; // Alineación vertical por defecto
+  
+  // Propiedades para celdas individuales (cuando type = 'tableCell')
+  content?: string; // Contenido de la celda
+  rowIndex?: number; // Índice de fila
+  columnIndex?: number; // Índice de columna
+  cellBackgroundColor?: string; // Color de fondo específico de la celda
 }
