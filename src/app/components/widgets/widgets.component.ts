@@ -132,75 +132,7 @@ export class WidgetsComponent implements OnInit {
    */
   cargarJsonEjemploLocal(): void {
     const jsonEjemplo: CanvasComponent[] = [
-      {
-        "id": "appbar-1",
-        "type": "AppBar",
-        "height": 56,
-        "decoration": {
-          "color": "#2196f3",
-          "border": { "color": "#000000", "width": 0 },
-          "borderRadius": 0
-        },
-        "title": "Login",
-        "centerTitle": true,
-        "children": [],
-        "parentId": null
-      },
-      {
-        "id": "contenedor-login",
-        "type": "Container",
-        "top": 100,
-        "left": 30,
-        "width": 300,
-        "height": 200,
-        "childrenLayout": "column",
-        "gap": 16,
-        "decoration": {
-          "color": "#ffffff",
-          "border": {
-            "color": "#000000",
-            "width": 1
-          },
-          "borderRadius": 12
-        },
-        "paddingAll": 16,
-        "children": [
-          {
-            "id": "input-email",
-            "type": "TextField",
-            "height": 56,
-            "width": 268,
-            "hintText": "Correo electrónico",
-            "inputType": "email",
-            "fontSize": 14,
-            "decoration": {
-              "color": "#ffffff",
-              "border": { "color": "#cccccc", "width": 1 },
-              "borderRadius": 6
-            },
-            "textColor": "#000000",
-            "children": [],
-            "parentId": "contenedor-login"
-          },
-          {
-            "id": "boton-enviar",
-            "type": "TextButton",
-            "text": "Iniciar Sesión",
-            "fontSize": 16,
-            "width": 268,
-            "height": 48,
-            "decoration": {
-              "color": "#2196f3",
-              "border": { "color": "#000000", "width": 0 },
-              "borderRadius": 6
-            },
-            "textColor": "#ffffff",
-            "children": [],
-            "parentId": "contenedor-login"
-          }
-        ],
-        "parentId": null
-      }
+     
     ];
 
     // Obtener el ID de la página actual
